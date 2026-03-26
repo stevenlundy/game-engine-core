@@ -221,30 +221,30 @@
 **Goal:** A standardized, efficient `.glog` file format for every game session.
 
 ### 6.1 Schema Types (`pkg/engine/replay_types.go`)
-- [ ] Define `SessionMetadataEntry` struct (`SessionID`, `RulesetVersion`, `PlayerIDs []string`, `StartTimeUnix int64`, `Mode string`) with `json` struct tags
-- [ ] Define `ReplayEntry` struct with fields: `StepIndex int`, `ActorID string`, `ActionTaken json.RawMessage`, `StateSnapshot json.RawMessage`, `RewardDelta float64`, `IsTerminal bool` — all with `json` struct tags matching the PRD schema
-- [ ] Define a `ReplayRecord` union type (or tagged struct with `Type string` field) to encode both metadata and step entries in a single JSON-L stream
-- [ ] Implement `ReplayRecord.MarshalJSON()` and `ReplayRecord.UnmarshalJSON()` for the union type
+- [x] Define `SessionMetadataEntry` struct (`SessionID`, `RulesetVersion`, `PlayerIDs []string`, `StartTimeUnix int64`, `Mode string`) with `json` struct tags
+- [x] Define `ReplayEntry` struct with fields: `StepIndex int`, `ActorID string`, `ActionTaken json.RawMessage`, `StateSnapshot json.RawMessage`, `RewardDelta float64`, `IsTerminal bool` — all with `json` struct tags matching the PRD schema
+- [x] Define a `ReplayRecord` union type (or tagged struct with `Type string` field) to encode both metadata and step entries in a single JSON-L stream
+- [x] Implement `ReplayRecord.MarshalJSON()` and `ReplayRecord.UnmarshalJSON()` for the union type
 
 ### 6.2 Writer (`pkg/engine/replay_writer.go`)
-- [ ] Define `ReplayLog` struct holding an `io.Writer`, a `bufio.Writer` for buffering, an optional `gzip.Writer`, and a `sync.Mutex`
-- [ ] Implement `NewReplayLog(path string, mode RunMode) (*ReplayLog, error)` — opens the file, wraps in `bufio.Writer` (64 KB buffer), and wraps in `gzip.Writer` when `mode == RunModeHeadless`
-- [ ] Implement `ReplayLog.WriteMetadata(meta SessionMetadataEntry) error` — writes the header record as the first JSON-L line
-- [ ] Implement `ReplayLog.WriteEntry(entry ReplayEntry) error` — serializes to JSON and writes a `\n`-terminated line; must be goroutine-safe via the mutex
-- [ ] Implement `ReplayLog.Flush() error` — flushes the `bufio.Writer` (and `gzip.Writer` if active)
-- [ ] Implement `ReplayLog.Close() error` — flushes, closes `gzip.Writer` if active, then closes the underlying file
+- [x] Define `ReplayLog` struct holding an `io.Writer`, a `bufio.Writer` for buffering, an optional `gzip.Writer`, and a `sync.Mutex`
+- [x] Implement `NewReplayLog(path string, mode RunMode) (*ReplayLog, error)` — opens the file, wraps in `bufio.Writer` (64 KB buffer), and wraps in `gzip.Writer` when `mode == RunModeHeadless`
+- [x] Implement `ReplayLog.WriteMetadata(meta SessionMetadataEntry) error` — writes the header record as the first JSON-L line
+- [x] Implement `ReplayLog.WriteEntry(entry ReplayEntry) error` — serializes to JSON and writes a `\n`-terminated line; must be goroutine-safe via the mutex
+- [x] Implement `ReplayLog.Flush() error` — flushes the `bufio.Writer` (and `gzip.Writer` if active)
+- [x] Implement `ReplayLog.Close() error` — flushes, closes `gzip.Writer` if active, then closes the underlying file
 
 ### 6.3 Reader / Parser (`pkg/engine/replay_reader.go`)
-- [ ] Implement `OpenReplayLog(path string) (*ReplayReader, error)` — auto-detects GZIP magic bytes and transparently wraps with `gzip.Reader`
-- [ ] Implement `ReplayReader.ReadMetadata() (SessionMetadataEntry, error)` — reads and parses the first line
-- [ ] Implement `ReplayReader.Next() (ReplayEntry, error)` — advances one line, returns `io.EOF` when exhausted
-- [ ] Implement `ReplayReader.Close() error`
-- [ ] Write an integration test: write 1,000 entries with `ReplayLog`, re-read with `ReplayReader`, and assert round-trip fidelity for all fields including `RewardDelta` float precision
+- [x] Implement `OpenReplayLog(path string) (*ReplayReader, error)` — auto-detects GZIP magic bytes and transparently wraps with `gzip.Reader`
+- [x] Implement `ReplayReader.ReadMetadata() (SessionMetadataEntry, error)` — reads and parses the first line
+- [x] Implement `ReplayReader.Next() (ReplayEntry, error)` — advances one line, returns `io.EOF` when exhausted
+- [x] Implement `ReplayReader.Close() error`
+- [x] Write an integration test: write 1,000 entries with `ReplayLog`, re-read with `ReplayReader`, and assert round-trip fidelity for all fields including `RewardDelta` float precision
 
 ### 6.4 GZIP & Performance
-- [ ] Write a benchmark (`BenchmarkReplayLog`) comparing throughput of plain vs. GZIP writers at 10,000 entries
-- [ ] Document the compression ratio achieved on a sample `.glog` in `README.md`
-- [ ] Implement a CLI utility `cmd/glogtool/main.go` with subcommands `inspect` (prints metadata) and `dump` (pretty-prints all entries) for local debugging
+- [x] Write a benchmark (`BenchmarkReplayLog`) comparing throughput of plain vs. GZIP writers at 10,000 entries
+- [x] Document the compression ratio achieved on a sample `.glog` in `README.md`
+- [x] Implement a CLI utility `cmd/glogtool/main.go` with subcommands `inspect` (prints metadata) and `dump` (pretty-prints all entries) for local debugging
 
 ---
 

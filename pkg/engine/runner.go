@@ -276,7 +276,7 @@ func writeReplayEntry(session *Session, action Action, reward float64, terminal 
 	}
 
 	entry := ReplayEntry{
-		StepIndex:     session.step,
+		StepIndex:     int(session.step),
 		ActorID:       action.ActorID,
 		ActionTaken:   action.Payload,
 		StateSnapshot: stateSnap,
