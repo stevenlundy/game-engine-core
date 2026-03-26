@@ -102,6 +102,10 @@ type Session struct {
 	// It starts at 0 and is incremented by the runner; it mirrors
 	// State.StepIndex after the first ApplyAction call.
 	step int64
+
+	// winnerID holds the winner returned by the terminal IsTerminal check.
+	// It is set by the runner when the game ends and may be read by BatchRunner.
+	winnerID string
 }
 
 // NewSession constructs a new Session: it validates the config, calls

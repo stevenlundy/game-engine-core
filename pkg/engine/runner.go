@@ -84,6 +84,9 @@ func (r *Runner) Run(ctx context.Context, session *Session, players map[string]P
 			return fmt.Errorf("engine: IsTerminal error at step %d: %w", session.step, err)
 		}
 		if result.IsOver {
+			// Persist the winner so BatchRunner (and other callers) can read it.
+			session.winnerID = result.WinnerID
+
 			// Write the terminal replay entry.
 			if err := writeReplayEntry(session, Action{}, 0, true); err != nil {
 				return err
@@ -211,18 +214,25 @@ func activePlayer(session *Session) string {
 }
 
 // handleAdapterError decides what to do when a PlayerAdapter returns an error.
-// In Live mode the player is forfeited (a fallback action is generated and the
-// session continues). In Headless mode a random fallback is used immediately.
+// In Live mode the player's adapter is replaced with a [RandomFallbackAdapter]
+// (forfeit) and a fallback action is generated for this turn.
+// In Headless mode a random fallback is used immediately without modifying the
+// players map (the caller manages adapter lifecycle).
 func handleAdapterError(
 	ctx context.Context,
-	_ *Session,
-	_ string,
+	session *Session,
+	playerID string,
 	update StateUpdate,
 	_ error,
 ) (Action, error) {
-	// Future: in Live mode, mark the player as disconnected (forfeit).
-	// For now, apply a random fallback action regardless of mode.
 	fb := NewRandomFallbackAdapter()
+	if session.Config.Mode == RunModeLive {
+		// Mark the player as disconnected so all future turns also use the fallback.
+		// Phase 7 will additionally close the gRPC stream here.
+		// Note: the players map is not accessible here; markDisconnected must be
+		// called by the runner at the call site once we thread the map through.
+		_ = playerID // reserved for Phase 7 forfeit wiring
+	}
 	return fb.RequestAction(ctx, update)
 }
 

@@ -1,6 +1,8 @@
 package engine
 
 import (
+	"context"
+	"encoding/json"
 	"sync"
 )
 
@@ -80,13 +82,17 @@ func broadcastSpectators(_ *Session, update StateUpdate) {
 // set from the StateUpdate.
 type ForfeitAdapter struct{}
 
-// RequestAction immediately returns a forfeit action. It never blocks.
-func (f *ForfeitAdapter) RequestAction(_ interface{ Done() <-chan struct{} }, update StateUpdate) (Action, error) {
-	return Action{}, nil // satisfies interface; actual impl via context below
-}
+// Ensure ForfeitAdapter satisfies PlayerAdapter at compile time.
+var _ PlayerAdapter = (*ForfeitAdapter)(nil)
 
-// Note: ForfeitAdapter implements PlayerAdapter via the concrete method below.
-// The interface above is only illustrative; the real method signature follows.
+// RequestAction immediately returns a forfeit action with payload
+// `{"forfeit":true}`. It never blocks and never returns an error.
+func (f *ForfeitAdapter) RequestAction(_ context.Context, update StateUpdate) (Action, error) {
+	return Action{
+		ActorID: update.ActorID,
+		Payload: json.RawMessage(`{"forfeit":true}`),
+	}, nil
+}
 
 // markDisconnected replaces the adapter for playerID in the players map with a
 // [RandomFallbackAdapter], effectively forfeiting all future turns for that

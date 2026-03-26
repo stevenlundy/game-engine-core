@@ -17,8 +17,9 @@ coverage.txt
 go.work
 go.work.sum
 
-# Protobuf generated files
-api/proto/gen/
+# Protobuf generated files are committed (api/proto/gen/ is tracked).
+# Do NOT add api/proto/gen/ here — generated .pb.go files must be in the repo
+# so that CI can run `go test ./...` without requiring protoc to be installed.
 
 # Replay logs
 *.glog

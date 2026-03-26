@@ -21,7 +21,7 @@ lint:
 ##                  go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 proto:
 	@mkdir -p api/proto/gen
-	PATH="$(PATH):/Users/stevenl/go/bin" protoc \
+	PATH="$(PATH):$(shell go env GOPATH)/bin" protoc \
 		--proto_path=api/proto \
 		--go_out=api/proto/gen --go_opt=paths=source_relative \
 		--go-grpc_out=api/proto/gen --go-grpc_opt=paths=source_relative \

@@ -167,6 +167,7 @@ func (b *BatchRunner) RunAll(ctx context.Context, configs []SessionConfig) ([]Ba
 				results[job.idx] = BatchResult{
 					SessionID: job.cfg.SessionID,
 					Steps:     session.step,
+					WinnerID:  session.winnerID,
 					Err:       runErr,
 				}
 			}
