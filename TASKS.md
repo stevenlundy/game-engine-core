@@ -107,73 +107,73 @@
 ### 4.1 Cards (`pkg/components/cards/`)
 
 #### Deck
-- [ ] Define `Card` struct (`Suit string`, `Rank string`, `ID string`, `Meta json.RawMessage`)
-- [ ] Define `Deck` struct wrapping `[]Card` with a `NewDeck(cards []Card) *Deck` constructor
-- [ ] Implement `Deck.Size() int`
-- [ ] Implement `Deck.IsEmpty() bool`
-- [ ] Implement `Deck.Reset()` to restore the deck to its original ordered state
+- [x] Define `Card` struct (`Suit string`, `Rank string`, `ID string`, `Meta json.RawMessage`)
+- [x] Define `Deck` struct wrapping `[]Card` with a `NewDeck(cards []Card) *Deck` constructor
+- [x] Implement `Deck.Size() int`
+- [x] Implement `Deck.IsEmpty() bool`
+- [x] Implement `Deck.Reset()` to restore the deck to its original ordered state
 
 #### Shuffle
-- [ ] Implement `Deck.Shuffle(rng *rand.Rand)` using Fisher-Yates in-place algorithm
-- [ ] Accept an explicit `*rand.Rand` (not the global source) so results are deterministic given a seed
-- [ ] Write a statistical test confirming uniform distribution of shuffle positions over 10,000 runs
+- [x] Implement `Deck.Shuffle(rng *rand.Rand)` using Fisher-Yates in-place algorithm
+- [x] Accept an explicit `*rand.Rand` (not the global source) so results are deterministic given a seed
+- [x] Write a statistical test confirming uniform distribution of shuffle positions over 10,000 runs
 
 #### Deal
-- [ ] Implement `Deck.Deal(n int) ([]Card, error)` that removes and returns the top `n` cards
-- [ ] Return a typed error (`ErrInsufficientCards`) when the deck has fewer than `n` cards remaining
-- [ ] Implement `Deck.DealTo(hands []*Hand, n int) error` to deal `n` cards to each of several hands in round-robin order
+- [x] Implement `Deck.Deal(n int) ([]Card, error)` that removes and returns the top `n` cards
+- [x] Return a typed error (`ErrInsufficientCards`) when the deck has fewer than `n` cards remaining
+- [x] Implement `Deck.DealTo(hands []*Hand, n int) error` to deal `n` cards to each of several hands in round-robin order
 
 #### Hand & Hidden-State Masking
-- [ ] Define `Hand` struct (`OwnerID string`, `Cards []Card`)
-- [ ] Implement `Hand.Add(cards ...Card)`
-- [ ] Implement `Hand.Remove(cardID string) (Card, error)`
-- [ ] Implement `Hand.MaskFor(viewerID string) Hand` — returns a copy where all cards not owned by `viewerID` have their `Suit` and `Rank` zeroed out and `ID` replaced with `"hidden"`
-- [ ] Write unit tests for `MaskFor` confirming the owner sees all cards and all other viewers see only `"hidden"` entries
+- [x] Define `Hand` struct (`OwnerID string`, `Cards []Card`)
+- [x] Implement `Hand.Add(cards ...Card)`
+- [x] Implement `Hand.Remove(cardID string) (Card, error)`
+- [x] Implement `Hand.MaskFor(viewerID string) Hand` — returns a copy where all cards not owned by `viewerID` have their `Suit` and `Rank` zeroed out and `ID` replaced with `"hidden"`
+- [x] Write unit tests for `MaskFor` confirming the owner sees all cards and all other viewers see only `"hidden"` entries
 
 ### 4.2 Grid (`pkg/components/grid/`)
 
 #### 2D Grid
-- [ ] Define `Vec2` struct (`X, Y int`)
-- [ ] Define `Grid2D[T any]` struct backed by a flat `[]T` slice with `Width, Height int`
-- [ ] Implement `NewGrid2D[T](width, height int) *Grid2D[T]`
-- [ ] Implement `Grid2D.Get(pos Vec2) (T, error)` with bounds checking
-- [ ] Implement `Grid2D.Set(pos Vec2, val T) error` with bounds checking
-- [ ] Implement `Grid2D.InBounds(pos Vec2) bool`
-- [ ] Implement `Grid2D.Neighbors4(pos Vec2) []Vec2` (cardinal directions only)
-- [ ] Implement `Grid2D.Neighbors8(pos Vec2) []Vec2` (cardinal + diagonal)
+- [x] Define `Vec2` struct (`X, Y int`)
+- [x] Define `Grid2D[T any]` struct backed by a flat `[]T` slice with `Width, Height int`
+- [x] Implement `NewGrid2D[T](width, height int) *Grid2D[T]`
+- [x] Implement `Grid2D.Get(pos Vec2) (T, error)` with bounds checking
+- [x] Implement `Grid2D.Set(pos Vec2, val T) error` with bounds checking
+- [x] Implement `Grid2D.InBounds(pos Vec2) bool`
+- [x] Implement `Grid2D.Neighbors4(pos Vec2) []Vec2` (cardinal directions only)
+- [x] Implement `Grid2D.Neighbors8(pos Vec2) []Vec2` (cardinal + diagonal)
 
 #### 3D Grid
-- [ ] Define `Vec3` struct (`X, Y, Z int`)
-- [ ] Define `Grid3D[T any]` struct backed by a flat `[]T` slice with `Width, Height, Depth int`
-- [ ] Implement `NewGrid3D[T](width, height, depth int) *Grid3D[T]`
-- [ ] Implement `Grid3D.Get(pos Vec3) (T, error)` and `Grid3D.Set(pos Vec3, val T) error` with bounds checking
-- [ ] Implement `Grid3D.InBounds(pos Vec3) bool`
+- [x] Define `Vec3` struct (`X, Y, Z int`)
+- [x] Define `Grid3D[T any]` struct backed by a flat `[]T` slice with `Width, Height, Depth int`
+- [x] Implement `NewGrid3D[T](width, height, depth int) *Grid3D[T]`
+- [x] Implement `Grid3D.Get(pos Vec3) (T, error)` and `Grid3D.Set(pos Vec3, val T) error` with bounds checking
+- [x] Implement `Grid3D.InBounds(pos Vec3) bool`
 
 #### Distance Math
-- [ ] Implement `ManhattanDistance2D(a, b Vec2) int`
-- [ ] Implement `EuclideanDistance2D(a, b Vec2) float64`
-- [ ] Implement `ManhattanDistance3D(a, b Vec3) int`
-- [ ] Implement `EuclideanDistance3D(a, b Vec3) float64`
-- [ ] Implement `ChebyshevDistance2D(a, b Vec2) int` (chessboard distance, useful for grid games)
+- [x] Implement `ManhattanDistance2D(a, b Vec2) int`
+- [x] Implement `EuclideanDistance2D(a, b Vec2) float64`
+- [x] Implement `ManhattanDistance3D(a, b Vec3) int`
+- [x] Implement `EuclideanDistance3D(a, b Vec3) float64`
+- [x] Implement `ChebyshevDistance2D(a, b Vec2) int` (chessboard distance, useful for grid games)
 
 #### Occupancy Map
-- [ ] Define `OccupancyMap` as a type alias or thin wrapper over `Grid2D[string]` where `""` means empty
-- [ ] Implement `OccupancyMap.Occupy(pos Vec2, entityID string) error` (returns error if already occupied)
-- [ ] Implement `OccupancyMap.Vacate(pos Vec2) error` (returns error if already empty)
-- [ ] Implement `OccupancyMap.IsOccupied(pos Vec2) bool`
-- [ ] Implement `OccupancyMap.OccupiedBy(pos Vec2) (string, bool)`
-- [ ] Implement `OccupancyMap.AllOccupied() []Vec2` returning positions of all non-empty cells
-- [ ] Write table-driven unit tests covering boundary conditions and double-occupy / double-vacate errors
+- [x] Define `OccupancyMap` as a type alias or thin wrapper over `Grid2D[string]` where `""` means empty
+- [x] Implement `OccupancyMap.Occupy(pos Vec2, entityID string) error` (returns error if already occupied)
+- [x] Implement `OccupancyMap.Vacate(pos Vec2) error` (returns error if already empty)
+- [x] Implement `OccupancyMap.IsOccupied(pos Vec2) bool`
+- [x] Implement `OccupancyMap.OccupiedBy(pos Vec2) (string, bool)`
+- [x] Implement `OccupancyMap.AllOccupied() []Vec2` returning positions of all non-empty cells
+- [x] Write table-driven unit tests covering boundary conditions and double-occupy / double-vacate errors
 
 ### 4.3 Timing (`pkg/components/timing/`)
-- [ ] Define `TurnTimer` struct with configurable `Timeout time.Duration` and a channel-based signal
-- [ ] Implement `TurnTimer.Start(ctx context.Context)` that begins a countdown
-- [ ] Implement `TurnTimer.Stop()` that cancels the countdown cleanly
-- [ ] Implement `TurnTimer.Expired() <-chan struct{}` returning a channel that fires when the deadline passes
-- [ ] Implement the **50ms AI timeout** as a package-level constant `DefaultAITimeout = 50 * time.Millisecond`
-- [ ] Implement `TurnTimer.ElapsedMs() int64` for telemetry logging
-- [ ] Write a unit test that starts a timer with a 10ms timeout and confirms the `Expired()` channel fires within ±5ms
-- [ ] Write a unit test that starts and then immediately stops a timer and confirms the `Expired()` channel never fires
+- [x] Define `TurnTimer` struct with configurable `Timeout time.Duration` and a channel-based signal
+- [x] Implement `TurnTimer.Start(ctx context.Context)` that begins a countdown
+- [x] Implement `TurnTimer.Stop()` that cancels the countdown cleanly
+- [x] Implement `TurnTimer.Expired() <-chan struct{}` returning a channel that fires when the deadline passes
+- [x] Implement the **50ms AI timeout** as a package-level constant `DefaultAITimeout = 50 * time.Millisecond`
+- [x] Implement `TurnTimer.ElapsedMs() int64` for telemetry logging
+- [x] Write a unit test that starts a timer with a 10ms timeout and confirms the `Expired()` channel fires within ±5ms
+- [x] Write a unit test that starts and then immediately stops a timer and confirms the `Expired()` channel never fires
 
 ---
 
