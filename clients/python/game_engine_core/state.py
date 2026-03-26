@@ -14,14 +14,16 @@ Example::
         print(rich.hand, rich.top_card)
         return draw_card(actor_id=self.player_id)
 """
+
 from __future__ import annotations
 
 import json
 import logging
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
-from game_engine_core.client import StateUpdate
+if TYPE_CHECKING:
+    from game_engine_core.client import StateUpdate
 
 logger = logging.getLogger(__name__)
 
@@ -48,12 +50,12 @@ class RichState:
 
     game_id: str = ""
     step_index: int = 0
-    hand: List[Dict[str, str]] = field(default_factory=list)
-    top_card: Optional[Dict[str, str]] = None
+    hand: list[dict[str, str]] = field(default_factory=list)
+    top_card: dict[str, str] | None = None
     current_player: str = ""
-    scores: Dict[str, float] = field(default_factory=dict)
+    scores: dict[str, float] = field(default_factory=dict)
     is_terminal: bool = False
-    raw: Dict[str, Any] = field(default_factory=dict)
+    raw: dict[str, Any] = field(default_factory=dict)
 
 
 def parse_rich_state(state_update: StateUpdate) -> RichState:
@@ -80,7 +82,7 @@ def parse_rich_state(state_update: StateUpdate) -> RichState:
         return rich
 
     try:
-        data: Dict[str, Any] = json.loads(payload_bytes.decode("utf-8"))
+        data: dict[str, Any] = json.loads(payload_bytes.decode("utf-8"))
     except (json.JSONDecodeError, UnicodeDecodeError) as exc:
         logger.warning("Failed to parse state payload as JSON: %s", exc)
         return rich

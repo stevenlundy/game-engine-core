@@ -11,11 +11,11 @@ Example::
     action = play_card("8", "hearts", declared_suit="spades")
     action = draw_card()
 """
+
 from __future__ import annotations
 
 import json
 import time
-from typing import Optional
 
 from game_engine_core.client import Action
 
@@ -23,10 +23,10 @@ from game_engine_core.client import Action
 def play_card(
     rank: str,
     suit: str,
-    declared_suit: Optional[str] = None,
+    declared_suit: str | None = None,
     *,
     actor_id: str = "",
-    timestamp_ms: Optional[int] = None,
+    timestamp_ms: int | None = None,
 ) -> Action:
     """Create an action that plays a card from the player's hand.
 
@@ -43,7 +43,7 @@ def play_card(
     Returns:
         A typed :class:`~game_engine_core.client.Action` ready to send.
     """
-    payload: dict = {"type": "play_card", "rank": rank, "suit": suit}
+    payload: dict[str, str] = {"type": "play_card", "rank": rank, "suit": suit}
     if declared_suit is not None:
         payload["declared_suit"] = declared_suit
     return Action(
@@ -56,7 +56,7 @@ def play_card(
 def draw_card(
     *,
     actor_id: str = "",
-    timestamp_ms: Optional[int] = None,
+    timestamp_ms: int | None = None,
 ) -> Action:
     """Create an action that draws the top card from the draw pile.
 
@@ -68,7 +68,7 @@ def draw_card(
     Returns:
         A typed :class:`~game_engine_core.client.Action` ready to send.
     """
-    payload: dict = {"type": "draw_card"}
+    payload: dict[str, str] = {"type": "draw_card"}
     return Action(
         actor_id=actor_id,
         payload=json.dumps(payload).encode(),

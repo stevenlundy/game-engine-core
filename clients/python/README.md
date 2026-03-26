@@ -120,5 +120,39 @@ Requirements: `grpcio-tools` must be installed in the venv (`uv sync` handles th
 
 ```bash
 cd clients/python
-uv run pytest
+
+# Unit tests only (no Go server required)
+make test
+
+# All tests including integration (requires 'go' on PATH)
+make test-all
 ```
+
+---
+
+## Dev Tooling
+
+Install all dev dependencies:
+
+```bash
+make install
+# or: uv sync --extra dev
+```
+
+| Command | What it does |
+|---|---|
+| `make lint` | `ruff check` — linting (unused imports, bugbear, pyupgrade, etc.) |
+| `make fmt` | `ruff format` — auto-format all files |
+| `make fmt-check` | `ruff format --check` — CI formatting check |
+| `make type-check` | `mypy game_engine_core/ tests/` — strict type checking |
+
+### Pre-commit hook
+
+Install once after cloning (from the repo root):
+
+```bash
+git config core.hooksPath clients/python/.githooks
+```
+
+The hook runs `ruff format --check`, `ruff check`, and `mypy` before every commit.
+

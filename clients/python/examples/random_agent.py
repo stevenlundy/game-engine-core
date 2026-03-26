@@ -6,15 +6,15 @@ Run against a local game-engine-core server:
     uv run python examples/random_agent.py --server localhost:50051 \
         --player my-bot --game crazy-eights
 """
+
 from __future__ import annotations
 
 import argparse
-import json
 import logging
 import random
 
-from game_engine_core import GameClient, Action
-from game_engine_core.actions import play_card, draw_card
+from game_engine_core import Action, GameClient
+from game_engine_core.actions import draw_card, play_card
 from game_engine_core.state import parse_rich_state
 
 logging.basicConfig(level=logging.INFO)

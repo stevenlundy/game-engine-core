@@ -40,6 +40,7 @@ The fixture looks for the Go repo root by walking up from ``__file__`` (or
 ``GAME_ENGINE_CORE_ROOT`` env var) until it finds a ``go.mod`` containing
 ``game-engine-core``.  It then runs ``go build -o <tmp> ./cmd/testserver/``.
 """
+
 from __future__ import annotations
 
 import os
@@ -49,10 +50,12 @@ import tempfile
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Generator, Optional
+from typing import TYPE_CHECKING
 
 import pytest
 
+if TYPE_CHECKING:
+    from collections.abc import Generator, Iterator
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -66,9 +69,7 @@ def _find_repo_root() -> Path:
         p = Path(env_root)
         if (p / "go.mod").exists():
             return p
-        raise RuntimeError(
-            f"GAME_ENGINE_CORE_ROOT={env_root!r} does not contain a go.mod"
-        )
+        raise RuntimeError(f"GAME_ENGINE_CORE_ROOT={env_root!r} does not contain a go.mod")
 
     # Walk up from this file's location.
     candidate = Path(__file__).resolve().parent
@@ -93,7 +94,7 @@ def _free_port() -> int:
     """Return an unused TCP port on localhost."""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind(("127.0.0.1", 0))
-        return s.getsockname()[1]
+        return int(s.getsockname()[1])
 
 
 def _wait_for_port(host: str, port: int, timeout: float = 10.0) -> None:
@@ -105,9 +106,7 @@ def _wait_for_port(host: str, port: int, timeout: float = 10.0) -> None:
                 return
         except OSError:
             time.sleep(0.05)
-    raise TimeoutError(
-        f"Test server did not start on {host}:{port} within {timeout}s"
-    )
+    raise TimeoutError(f"Test server did not start on {host}:{port} within {timeout}s")
 
 
 # ---------------------------------------------------------------------------
@@ -133,10 +132,10 @@ class ServerInfo:
     game_type: str
     countdown_steps: int
     max_players: int
-    process: subprocess.Popen
+    process: subprocess.Popen[bytes]
 
 
-def build_testserver(repo_root: Optional[Path] = None) -> Path:
+def build_testserver(repo_root: Path | None = None) -> Path:
     """Build ``cmd/testserver`` and return the path to the binary.
 
     The binary is written to a temporary directory and cached for the
@@ -158,7 +157,7 @@ def build_testserver(repo_root: Optional[Path] = None) -> Path:
 
     # Re-use the cached binary for the lifetime of the test session.
     cache_attr = "_testserver_binary"
-    cached: Optional[Path] = getattr(build_testserver, cache_attr, None)
+    cached: Path | None = getattr(build_testserver, cache_attr, None)
     if cached is not None and cached.exists():
         return cached
 
@@ -185,11 +184,11 @@ def build_testserver(repo_root: Optional[Path] = None) -> Path:
 
 def start_testserver(
     *,
-    repo_root: Optional[Path] = None,
+    repo_root: Path | None = None,
     game_type: str = "countdown",
     countdown_steps: int = 5,
     max_players: int = 1,
-    log_dir: Optional[str] = None,
+    log_dir: str | None = None,
 ) -> ServerInfo:
     """Build (if needed) and start the test server.
 
@@ -278,7 +277,7 @@ def game_server() -> Generator[ServerInfo, None, None]:
 
 
 @pytest.fixture(scope="function")
-def game_server_factory() -> Generator:
+def game_server_factory() -> Generator[object, None, None]:
     """Pytest fixture: factory for customised test server instances.
 
     Usage::
@@ -297,8 +296,8 @@ def game_server_factory() -> Generator:
         game_type: str = "countdown",
         countdown_steps: int = 5,
         max_players: int = 1,
-        log_dir: Optional[str] = None,
-    ):
+        log_dir: str | None = None,
+    ) -> Iterator[ServerInfo]:
         info = start_testserver(
             game_type=game_type,
             countdown_steps=countdown_steps,

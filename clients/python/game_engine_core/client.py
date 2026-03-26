@@ -5,22 +5,25 @@ Subclass GameClient and override on_state_update() to implement your bot.
 All gRPC plumbing is handled internally; callers only work with the typed
 StateUpdate and Action wrappers defined in this module.
 """
+
 from __future__ import annotations
 
 import logging
 import queue
-import threading
 import time
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import TYPE_CHECKING
 
 import grpc
 
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
 from game_engine_core.proto import (
     common_pb2,
+    gamesession_pb2_grpc,
     matchmaking_pb2,
     matchmaking_pb2_grpc,
-    gamesession_pb2_grpc,
 )
 
 logger = logging.getLogger(__name__)
@@ -56,7 +59,7 @@ class StateUpdate:
     actor_id: str
 
     @classmethod
-    def from_proto(cls, proto_msg: common_pb2.StateUpdate) -> "StateUpdate":
+    def from_proto(cls, proto_msg: common_pb2.StateUpdate) -> StateUpdate:  # type: ignore[name-defined]
         """Convert a raw proto StateUpdate into the typed wrapper."""
         s = proto_msg.state
         return cls(
@@ -85,9 +88,9 @@ class Action:
     payload: bytes = field(default=b"")
     timestamp_ms: int = field(default_factory=lambda: int(time.time() * 1000))
 
-    def to_proto(self) -> common_pb2.Action:
+    def to_proto(self) -> common_pb2.Action:  # type: ignore[name-defined]
         """Convert to a raw proto Action for transmission."""
-        return common_pb2.Action(
+        return common_pb2.Action(  # type: ignore[attr-defined]
             actor_id=self.actor_id,
             payload=self.payload,
             timestamp_ms=self.timestamp_ms,
@@ -127,8 +130,8 @@ class GameClient:
     def __init__(self, server_url: str, player_id: str) -> None:
         self.server_url = server_url
         self.player_id = player_id
-        self._channel: grpc.Channel = grpc.insecure_channel(server_url)
-        self._session_id: Optional[str] = None
+        self._channel: grpc.Channel | None = grpc.insecure_channel(server_url)
+        self._session_id: str | None = None
         logger.debug("GameClient created for player=%s at %s", player_id, server_url)
 
     # ------------------------------------------------------------------
@@ -151,8 +154,8 @@ class GameClient:
             grpc.RpcError: If the stream terminates before ``game_starting``.
             RuntimeError: If the stream ends without a ``game_starting`` update.
         """
-        stub = matchmaking_pb2_grpc.MatchmakingStub(self._channel)
-        request = matchmaking_pb2.JoinRequest(
+        stub = matchmaking_pb2_grpc.MatchmakingStub(self._channel)  # type: ignore[no-untyped-call]
+        request = matchmaking_pb2.JoinRequest(  # type: ignore[attr-defined]
             player_id=self.player_id,
             game_type=game_type,
         )
@@ -167,17 +170,13 @@ class GameClient:
                 )
                 if update.game_starting:
                     self._session_id = update.session_id
-                    logger.info(
-                        "Game starting: session_id=%s", self._session_id
-                    )
+                    logger.info("Game starting: session_id=%s", self._session_id)
                     return self._session_id
         except grpc.RpcError as exc:
             logger.error("JoinLobby stream error: %s", exc)
             raise
 
-        raise RuntimeError(
-            "JoinLobby stream ended without a game_starting=True update"
-        )
+        raise RuntimeError("JoinLobby stream ended without a game_starting=True update")
 
     def run(self) -> None:
         """Drive the bidirectional Play stream until the game ends.
@@ -195,13 +194,13 @@ class GameClient:
         Raises:
             grpc.RpcError: On stream-level errors (logged then re-raised).
         """
-        stub = gamesession_pb2_grpc.GameSessionStub(self._channel)
+        stub = gamesession_pb2_grpc.GameSessionStub(self._channel)  # type: ignore[no-untyped-call]
 
         # A queue through which the main thread pushes proto Actions for the
         # sender generator to yield to gRPC.
-        action_queue: queue.Queue = queue.Queue()
+        action_queue: queue.Queue[object] = queue.Queue()
 
-        def _sender():
+        def _sender() -> Generator[object, None, None]:
             """Generator that yields Actions from action_queue to the stream."""
             # Initial join action
             join_action = Action(actor_id=self.player_id)
@@ -264,4 +263,4 @@ class GameClient:
         if self._channel is not None:
             logger.debug("Closing gRPC channel for player=%s", self.player_id)
             self._channel.close()
-            self._channel = None  # type: ignore[assignment]
+            self._channel = None

@@ -3,17 +3,17 @@ Tests for GameClient in game_engine_core.client.
 
 These tests mock the gRPC channel so no real server is needed.
 """
+
 from __future__ import annotations
 
 import json
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, patch
 
 import grpc
 import pytest
 
 from game_engine_core.client import Action, GameClient, State, StateUpdate
 from game_engine_core.proto import common_pb2, matchmaking_pb2
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -27,7 +27,7 @@ def _make_proto_state_update(
     reward_delta: float = 0.0,
     is_terminal: bool = False,
     actor_id: str = "player-1",
-) -> common_pb2.StateUpdate:
+) -> common_pb2.StateUpdate:  # type: ignore[name-defined]
     """Build a proto StateUpdate for use in tests."""
     return common_pb2.StateUpdate(
         state=common_pb2.State(
@@ -45,7 +45,7 @@ def _make_proto_lobby_update(
     session_id: str = "sess-1",
     game_starting: bool = True,
     ready_players: list | None = None,
-) -> matchmaking_pb2.LobbyStatusUpdate:
+) -> matchmaking_pb2.LobbyStatusUpdate:  # type: ignore[name-defined]
     return matchmaking_pb2.LobbyStatusUpdate(
         session_id=session_id,
         game_starting=game_starting,
@@ -108,6 +108,7 @@ class TestRunCallsOnStateUpdate:
             gen = iter(request_iterator)
             join_action = next(gen)  # initial join action
             sent_proto_actions.append(join_action)
+
             # Now return the response iterator.  As the caller iterates
             # over the response, they will call on_state_update() and
             # enqueue more actions.  We interleave by pulling one action
@@ -125,9 +126,7 @@ class TestRunCallsOnStateUpdate:
 
             return _response_and_drain()
 
-        with patch(
-            "game_engine_core.client.gamesession_pb2_grpc.GameSessionStub"
-        ) as MockStub:
+        with patch("game_engine_core.client.gamesession_pb2_grpc.GameSessionStub") as MockStub:
             mock_stub = MockStub.return_value
             mock_stub.Play.side_effect = _play_side_effect
             bot.run()
@@ -158,7 +157,7 @@ class TestRunCallsOnStateUpdate:
         assert len(sent_actions) == 2  # join + 1 response (not terminal)
         assert sent_actions[0].actor_id == "player-1"
         assert sent_actions[0].payload == b""
-        assert sent_actions[1].payload == b"action-0"
+        assert sent_actions[1].payload == b"action-0"  # type: ignore[union-attr]
 
     def test_single_terminal_update(self):
         updates = [_make_proto_state_update(step_index=0, is_terminal=True)]
@@ -211,9 +210,7 @@ class TestRunCallsOnStateUpdate:
         def _play_raises(_gen):
             raise grpc.RpcError("stream failed")
 
-        with patch(
-            "game_engine_core.client.gamesession_pb2_grpc.GameSessionStub"
-        ) as MockStub:
+        with patch("game_engine_core.client.gamesession_pb2_grpc.GameSessionStub") as MockStub:
             mock_stub = MockStub.return_value
             mock_stub.Play.side_effect = _play_raises
             with pytest.raises(grpc.RpcError):
@@ -235,12 +232,8 @@ class TestJoinLobby:
 
     def test_returns_session_id_when_game_starting(self):
         bot = self._make_bot()
-        updates = [
-            _make_proto_lobby_update(session_id="sess-abc", game_starting=True)
-        ]
-        with patch(
-            "game_engine_core.client.matchmaking_pb2_grpc.MatchmakingStub"
-        ) as MockStub:
+        updates = [_make_proto_lobby_update(session_id="sess-abc", game_starting=True)]
+        with patch("game_engine_core.client.matchmaking_pb2_grpc.MatchmakingStub") as MockStub:
             mock_stub = MockStub.return_value
             mock_stub.JoinLobby.return_value = iter(updates)
             result = bot.join_lobby("crazy-eights")
@@ -256,9 +249,7 @@ class TestJoinLobby:
             _make_proto_lobby_update(session_id="sess-1", game_starting=False),
             _make_proto_lobby_update(session_id="sess-1", game_starting=True),
         ]
-        with patch(
-            "game_engine_core.client.matchmaking_pb2_grpc.MatchmakingStub"
-        ) as MockStub:
+        with patch("game_engine_core.client.matchmaking_pb2_grpc.MatchmakingStub") as MockStub:
             mock_stub = MockStub.return_value
             mock_stub.JoinLobby.return_value = iter(updates)
             result = bot.join_lobby("crazy-eights")
@@ -271,9 +262,7 @@ class TestJoinLobby:
         updates = [
             _make_proto_lobby_update(session_id="sess-1", game_starting=False),
         ]
-        with patch(
-            "game_engine_core.client.matchmaking_pb2_grpc.MatchmakingStub"
-        ) as MockStub:
+        with patch("game_engine_core.client.matchmaking_pb2_grpc.MatchmakingStub") as MockStub:
             mock_stub = MockStub.return_value
             mock_stub.JoinLobby.return_value = iter(updates)
             with pytest.raises(RuntimeError, match="game_starting=True"):
@@ -286,9 +275,7 @@ class TestJoinLobby:
         def _raising_iter(_req):
             raise grpc.RpcError("network failure")
 
-        with patch(
-            "game_engine_core.client.matchmaking_pb2_grpc.MatchmakingStub"
-        ) as MockStub:
+        with patch("game_engine_core.client.matchmaking_pb2_grpc.MatchmakingStub") as MockStub:
             mock_stub = MockStub.return_value
             mock_stub.JoinLobby.side_effect = _raising_iter
             with pytest.raises(grpc.RpcError):
@@ -302,9 +289,7 @@ class TestJoinLobby:
             raise grpc.RpcError("mid-stream failure")
             yield  # make it a generator
 
-        with patch(
-            "game_engine_core.client.matchmaking_pb2_grpc.MatchmakingStub"
-        ) as MockStub:
+        with patch("game_engine_core.client.matchmaking_pb2_grpc.MatchmakingStub") as MockStub:
             mock_stub = MockStub.return_value
             mock_stub.JoinLobby.return_value = _error_iter()
             with pytest.raises(grpc.RpcError):

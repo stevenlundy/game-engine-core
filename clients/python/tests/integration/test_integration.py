@@ -18,6 +18,7 @@ Copy (or import) the ``game_server`` / ``game_server_factory`` fixtures from
 Then write tests exactly like the ones below, replacing CountdownGame
 semantics with your own game's expectations.
 """
+
 from __future__ import annotations
 
 import json
@@ -25,9 +26,12 @@ import shutil
 
 import pytest
 
-from game_engine_core import Action, GameClient
+from game_engine_core import Action, GameClient, StateUpdate
 from game_engine_core.actions import draw_card
-from game_engine_core.testing import game_server, game_server_factory  # noqa: F401 — registers fixtures
+from game_engine_core.testing import (  # noqa: F401 — registers fixtures
+    game_server,
+    game_server_factory,
+)
 
 # ---------------------------------------------------------------------------
 # Skip the entire module if 'go' is not available
@@ -47,18 +51,18 @@ pytestmark = pytest.mark.skipif(
 class AlwaysDrawBot(GameClient):
     """Bot that always draws a card — simplest possible agent."""
 
-    def on_state_update(self, update) -> Action:
+    def on_state_update(self, update: StateUpdate) -> Action:
         return draw_card(actor_id=self.player_id)
 
 
 class RecordingBot(GameClient):
     """Bot that records every StateUpdate it receives, then draws."""
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.updates = []
+    def __init__(self, server_url: str, player_id: str) -> None:
+        super().__init__(server_url, player_id)
+        self.updates: list[StateUpdate] = []
 
-    def on_state_update(self, update) -> Action:
+    def on_state_update(self, update: StateUpdate) -> Action:
         self.updates.append(update)
         return draw_card(actor_id=self.player_id)
 
@@ -111,8 +115,7 @@ class TestBasicConnection:
 
         non_terminal = [u for u in bot.updates if not u.is_terminal]
         assert len(non_terminal) == game_server.countdown_steps, (
-            f"Expected {game_server.countdown_steps} non-terminal updates, "
-            f"got {len(non_terminal)}"
+            f"Expected {game_server.countdown_steps} non-terminal updates, got {len(non_terminal)}"
         )
 
     def test_rewards_are_non_negative(self, game_server):
@@ -135,8 +138,7 @@ class TestBasicConnection:
 
         for update in bot.updates:
             assert update.reward_delta >= 0, (
-                f"Negative reward_delta at step {update.state.step_index}: "
-                f"{update.reward_delta}"
+                f"Negative reward_delta at step {update.state.step_index}: {update.reward_delta}"
             )
 
     def test_step_indices_are_monotonically_increasing(self, game_server):
@@ -185,9 +187,7 @@ class TestStatePayload:
             bot.close()
 
         for update in bot.updates:
-            assert update.state.game_id, (
-                f"game_id was empty at step {update.state.step_index}"
-            )
+            assert update.state.game_id, f"game_id was empty at step {update.state.step_index}"
 
 
 class TestCustomStepCount:
@@ -203,9 +203,7 @@ class TestCustomStepCount:
                 bot.close()
 
         non_terminal = [u for u in bot.updates if not u.is_terminal]
-        assert len(non_terminal) == 3, (
-            f"Expected 3 non-terminal updates, got {len(non_terminal)}"
-        )
+        assert len(non_terminal) == 3, f"Expected 3 non-terminal updates, got {len(non_terminal)}"
 
     def test_single_step_game(self, game_server_factory):
         """A 1-step game should produce 1 non-terminal update then a terminal."""

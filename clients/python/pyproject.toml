@@ -13,6 +13,9 @@ dependencies = [
 dev = [
     "pytest>=7.0",
     "pytest-mock>=3.0",
+    "ruff>=0.9.0",
+    "mypy>=1.10.0",
+    "types-protobuf>=4.25.0",
 ]
 
 [build-system]
@@ -24,3 +27,73 @@ packages = ["game_engine_core"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+# ── Ruff ─────────────────────────────────────────────────────────────────────
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+# Exclude generated protobuf files — they are not hand-written code.
+exclude = [
+    "game_engine_core/proto/*_pb2.py",
+    "game_engine_core/proto/*_pb2_grpc.py",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "F",    # pyflakes
+    "I",    # isort
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+    "SIM",  # flake8-simplify
+    "TCH",  # flake8-type-checking (move type-only imports to TYPE_CHECKING)
+]
+ignore = [
+    # F811: pytest fixtures are injected via argument name — ruff doesn't
+    # understand that test method params shadow the imported fixture names.
+    "F811",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Test files: allow assert statements and magic values.
+"tests/**" = ["S101", "PLR2004"]
+
+# ── Mypy ─────────────────────────────────────────────────────────────────────
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+# Generated protobuf files have no type stubs — ignore them entirely.
+exclude = [
+    "game_engine_core/proto/",
+]
+
+[[tool.mypy.overrides]]
+# grpcio ships no py.typed marker; suppress all missing-import errors for it.
+module = ["grpc", "grpc.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# google.protobuf stubs exist via types-protobuf but generated _pb2 modules
+# reference internal attributes mypy can't resolve. Suppress for pb2 imports.
+module = ["game_engine_core.proto.*"]
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+# test_client.py constructs raw proto objects for mocking — proto files are
+# untyped so we suppress name/attr errors for this file only.
+module = ["tests.test_client"]
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+# Tests are not part of the public API — relax strict checking.
+# We still catch the most important errors but don't require full annotations.
+module = ["tests.*"]
+disallow_untyped_defs = false
+disallow_untyped_calls = false
+no_implicit_reexport = false
+# Proto generated files are untyped; errors in test helpers that construct
+# proto objects for mocking are suppressed here.
+ignore_errors = false
+disallow_any_generics = false
