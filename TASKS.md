@@ -329,34 +329,34 @@
 **Goal:** A pip/uv-installable Python package that handles all gRPC plumbing so AI developers only implement `on_state_update()`.
 
 ### 9.1 Project Setup
-- [ ] Create `clients/python/pyproject.toml` using `uv` conventions — name `game-engine-core`, version `0.1.0`, requires Python ≥ 3.11
-- [ ] Add `grpcio`, `grpcio-tools`, and `protobuf` as dependencies in `pyproject.toml`
-- [ ] Create `clients/python/game_engine_core/__init__.py` exporting `GameClient` and `Action`
-- [ ] Add a `Makefile` target `proto-python` that runs `python -m grpc_tools.protoc` to compile `api/proto/*.proto` into `clients/python/game_engine_core/proto/`
-- [ ] Commit the generated `*_pb2.py` and `*_pb2_grpc.py` stubs (or document the generation step)
-- [ ] Add `.python-version` pinning Python `3.11` and a `uv.lock` file
+- [x] Create `clients/python/pyproject.toml` using `uv` conventions — name `game-engine-core`, version `0.1.0`, requires Python ≥ 3.11
+- [x] Add `grpcio`, `grpcio-tools`, and `protobuf` as dependencies in `pyproject.toml`
+- [x] Create `clients/python/game_engine_core/__init__.py` exporting `GameClient` and `Action`
+- [x] Add a `Makefile` target `proto-python` that runs `python -m grpc_tools.protoc` to compile `api/proto/*.proto` into `clients/python/game_engine_core/proto/`
+- [x] Commit the generated `*_pb2.py` and `*_pb2_grpc.py` stubs (or document the generation step)
+- [x] Add `.python-version` pinning Python `3.11` and a `uv.lock` file
 
 ### 9.2 `GameClient` Base Class (`game_engine_core/client.py`)
-- [ ] Define `GameClient` with `__init__(self, server_url: str, player_id: str)` that creates an insecure gRPC channel and a `GameSessionStub`
-- [ ] Implement `join_lobby(self, game_type: str)` that calls `MatchmakingStub.JoinLobby` and blocks until `game_starting=True`, returning the `session_id`
-- [ ] Implement `run(self)` that opens the bidirectional `Play` stream, sends the initial join action, then loops: receives `StateUpdate`, calls `on_state_update()`, sends back the returned `Action`
-- [ ] Define `on_state_update(self, state: StateUpdate) -> Action` as `raise NotImplementedError` — the single method subclasses override
-- [ ] Implement `close(self)` for clean channel shutdown
-- [ ] Handle stream errors and disconnection gracefully (log and re-raise)
-- [ ] Add type hints throughout; export a `StateUpdate` and `Action` dataclass or typed wrapper so callers never import raw proto objects
+- [x] Define `GameClient` with `__init__(self, server_url: str, player_id: str)` that creates an insecure gRPC channel and a `GameSessionStub`
+- [x] Implement `join_lobby(self, game_type: str)` that calls `MatchmakingStub.JoinLobby` and blocks until `game_starting=True`, returning the `session_id`
+- [x] Implement `run(self)` that opens the bidirectional `Play` stream, sends the initial join action, then loops: receives `StateUpdate`, calls `on_state_update()`, sends back the returned `Action`
+- [x] Define `on_state_update(self, state: StateUpdate) -> Action` as `raise NotImplementedError` — the single method subclasses override
+- [x] Implement `close(self)` for clean channel shutdown
+- [x] Handle stream errors and disconnection gracefully (log and re-raise)
+- [x] Add type hints throughout; export a `StateUpdate` and `Action` dataclass or typed wrapper so callers never import raw proto objects
 
 ### 9.3 Helper Utilities
-- [ ] Add `game_engine_core/actions.py` with factory functions `play_card(rank, suit, declared_suit=None) -> Action` and `draw_card() -> Action`
-- [ ] Add `game_engine_core/state.py` with a `RichState` dataclass and a `parse_rich_state(state_update) -> RichState` helper that unmarshals the JSON payload
+- [x] Add `game_engine_core/actions.py` with factory functions `play_card(rank, suit, declared_suit=None) -> Action` and `draw_card() -> Action`
+- [x] Add `game_engine_core/state.py` with a `RichState` dataclass and a `parse_rich_state(state_update) -> RichState` helper that unmarshals the JSON payload
 
 ### 9.4 Tests
-- [ ] Write `tests/test_client.py` using `pytest` — mock the gRPC channel to verify `run()` calls `on_state_update()` for each `StateUpdate` and sends back the returned `Action`
-- [ ] Write a test that confirms `join_lobby` raises an exception on a non-`game_starting` stream error
-- [ ] Run `uv run pytest` and confirm all tests pass
+- [x] Write `tests/test_client.py` using `pytest` — mock the gRPC channel to verify `run()` calls `on_state_update()` for each `StateUpdate` and sends back the returned `Action`
+- [x] Write a test that confirms `join_lobby` raises an exception on a non-`game_starting` stream error
+- [x] Run `uv run pytest` and confirm all tests pass
 
 ### 9.5 Documentation
-- [ ] Add `clients/python/README.md` covering: install (`uv add git+...` or `pip install .`), quickstart subclassing example, `proto-python` regeneration step
-- [ ] Add a `clients/python/examples/random_agent.py` showing the minimal subclass
+- [x] Add `clients/python/README.md` covering: install (`uv add git+...` or `pip install .`), quickstart subclassing example, `proto-python` regeneration step
+- [x] Add a `clients/python/examples/random_agent.py` showing the minimal subclass
 
 ---
 

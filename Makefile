@@ -1,4 +1,4 @@
-.PHONY: build test lint proto clean
+.PHONY: build test lint proto proto-python clean
 
 GO      ?= go
 GOFILES := $(shell find . -name '*.go' -not -path './vendor/*')
@@ -33,3 +33,25 @@ proto:
 clean:
 	$(GO) clean ./...
 	rm -rf bin/
+
+## proto-python: regenerate Python protobuf/gRPC stubs from api/proto/*.proto
+## Requires: uv with grpcio-tools installed in clients/python venv
+proto-python:
+	@mkdir -p clients/python/game_engine_core/proto
+	cd clients/python && uv run python -m grpc_tools.protoc \
+		--proto_path=../../api/proto \
+		--python_out=game_engine_core/proto \
+		--grpc_python_out=game_engine_core/proto \
+		../../api/proto/common.proto \
+		../../api/proto/matchmaking.proto \
+		../../api/proto/gamesession.proto
+	@touch clients/python/game_engine_core/proto/__init__.py
+	@# Fix bare imports in generated _grpc files to use package-relative imports
+	@sed -i '' 's/^import common_pb2/from game_engine_core.proto import common_pb2/' \
+		clients/python/game_engine_core/proto/gamesession_pb2.py
+	@sed -i '' 's/^import common_pb2/from game_engine_core.proto import common_pb2/' \
+		clients/python/game_engine_core/proto/gamesession_pb2_grpc.py
+	@sed -i '' 's/^import gamesession_pb2/from game_engine_core.proto import gamesession_pb2/' \
+		clients/python/game_engine_core/proto/gamesession_pb2_grpc.py
+	@sed -i '' 's/^import matchmaking_pb2/from game_engine_core.proto import matchmaking_pb2/' \
+		clients/python/game_engine_core/proto/matchmaking_pb2_grpc.py

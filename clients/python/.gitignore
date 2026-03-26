@@ -1,0 +1,17 @@
+# Python venv and cache
+.venv/
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Test / coverage artefacts
+.pytest_cache/
+.coverage
+htmlcov/
+
+# uv
+uv.lock
