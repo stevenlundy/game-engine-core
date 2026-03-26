@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+package gameengine.v1;
+
+import "common.proto";
+
+option go_package = "github.com/game-engine/game-engine-core/api/proto/gen;enginepb";
+
+// StartSessionRequest initiates a new game session stream.
+message StartSessionRequest {
+  // session_id is the pre-assigned identifier for this session.
+  string session_id = 1;
+  // player_id identifies the player connecting to the session.
+  string player_id = 2;
+  // initial_config carries optional game-specific configuration bytes.
+  bytes initial_config = 3;
+}
+
+// EndSessionRequest asks the server to terminate a session.
+message EndSessionRequest {
+  // session_id identifies the session to end.
+  string session_id = 1;
+  // reason is a human-readable explanation for ending the session.
+  string reason = 2;
+}
+
+// EndSessionResponse is returned when a session has been terminated.
+message EndSessionResponse {
+  // session_id echoes the terminated session's identifier.
+  string session_id = 1;
+  // reason echoes the reason supplied in the request.
+  string reason = 2;
+}
+
+// GetReplayRequest asks the server to stream the replay log for a session.
+message GetReplayRequest {
+  // session_id identifies the completed session whose replay is requested.
+  string session_id = 1;
+}
+
+// ReplayEntry mirrors one row of the .glog schema.
+message ReplayEntry {
+  // step_index is the zero-based ordinal of this transition.
+  int32 step_index = 1;
+  // actor_id identifies the player or AI that performed the action.
+  string actor_id = 2;
+  // action_taken is the opaque, game-specific encoded action.
+  bytes action_taken = 3;
+  // state_snapshot is the encoded game state immediately after the action.
+  bytes state_snapshot = 4;
+  // reward_delta is the immediate reward associated with this transition.
+  double reward_delta = 5;
+  // is_terminal is true if this entry represents the final step of the game.
+  bool is_terminal = 6;
+}
+
+// GameSession drives a single live game: the client streams Actions and the
+// server streams StateUpdates back in full-duplex mode.
+service GameSession {
+  // Play is a bidirectional streaming RPC: the client sends Action messages
+  // and the server responds with StateUpdate messages until the game ends.
+  rpc Play(stream Action) returns (stream StateUpdate);
+
+  // GetReplay streams all ReplayEntry records for a completed session,
+  // allowing clients to reconstruct the full game history from .glog data.
+  rpc GetReplay(GetReplayRequest) returns (stream ReplayEntry);
+}

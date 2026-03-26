@@ -45,32 +45,32 @@
 **Goal:** Define the complete wire contract so all other packages can depend on stable generated types.
 
 ### 2.1 Shared Message Types (`api/proto/common.proto`)
-- [ ] Define `JSON` as a `bytes` or `google.protobuf.Struct` wrapper message
-- [ ] Define `State` message (opaque `bytes payload` + `string game_id` + `int64 step_index`)
-- [ ] Define `Action` message (`string actor_id`, `bytes payload`, `int64 timestamp_ms`)
-- [ ] Define `StateUpdate` message (`State state`, `float64 reward_delta`, `bool is_terminal`, `string actor_id`)
-- [ ] Define `SessionMetadata` message (`string session_id`, `string ruleset_version`, `repeated string player_ids`, `int64 start_time_unix`)
-- [ ] Add proto package declaration and Go package option to `common.proto`
+- [x] Define `JSON` as a `bytes` or `google.protobuf.Struct` wrapper message
+- [x] Define `State` message (opaque `bytes payload` + `string game_id` + `int64 step_index`)
+- [x] Define `Action` message (`string actor_id`, `bytes payload`, `int64 timestamp_ms`)
+- [x] Define `StateUpdate` message (`State state`, `float64 reward_delta`, `bool is_terminal`, `string actor_id`)
+- [x] Define `SessionMetadata` message (`string session_id`, `string ruleset_version`, `repeated string player_ids`, `int64 start_time_unix`)
+- [x] Add proto package declaration and Go package option to `common.proto`
 
 ### 2.2 Matchmaking Service (`api/proto/matchmaking.proto`)
-- [ ] Define `JoinRequest` message (`string player_id`, `string game_type`, `bytes config`)
-- [ ] Define `JoinResponse` message (`string session_id`, `string status`, `repeated string player_ids`)
-- [ ] Define `LobbyStatusUpdate` message (`string session_id`, `repeated string ready_players`, `bool game_starting`)
-- [ ] Define `Matchmaking` service with `JoinLobby(JoinRequest) returns (stream LobbyStatusUpdate)` RPC
-- [ ] Define `Matchmaking` service with `CancelJoin(JoinRequest) returns (JoinResponse)` RPC
+- [x] Define `JoinRequest` message (`string player_id`, `string game_type`, `bytes config`)
+- [x] Define `JoinResponse` message (`string session_id`, `string status`, `repeated string player_ids`)
+- [x] Define `LobbyStatusUpdate` message (`string session_id`, `repeated string ready_players`, `bool game_starting`)
+- [x] Define `Matchmaking` service with `JoinLobby(JoinRequest) returns (stream LobbyStatusUpdate)` RPC
+- [x] Define `Matchmaking` service with `CancelJoin(JoinRequest) returns (JoinResponse)` RPC
 
 ### 2.3 GameSession Service (`api/proto/gamesession.proto`)
-- [ ] Define `GameSession` service with `Play(stream Action) returns (stream StateUpdate)` bidirectional streaming RPC
-- [ ] Define `StartSessionRequest` message (`string session_id`, `string player_id`, `bytes initial_config`)
-- [ ] Define `EndSessionRequest` / `EndSessionResponse` messages (`string session_id`, `string reason`)
-- [ ] Add `GetReplay(GetReplayRequest) returns (stream ReplayEntry)` RPC for serving `.glog` data over gRPC
-- [ ] Define `ReplayEntry` message mirroring the `.glog` schema (`int32 step_index`, `string actor_id`, `bytes action_taken`, `bytes state_snapshot`, `float64 reward_delta`, `bool is_terminal`)
+- [x] Define `GameSession` service with `Play(stream Action) returns (stream StateUpdate)` bidirectional streaming RPC
+- [x] Define `StartSessionRequest` message (`string session_id`, `string player_id`, `bytes initial_config`)
+- [x] Define `EndSessionRequest` / `EndSessionResponse` messages (`string session_id`, `string reason`)
+- [x] Add `GetReplay(GetReplayRequest) returns (stream ReplayEntry)` RPC for serving `.glog` data over gRPC
+- [x] Define `ReplayEntry` message mirroring the `.glog` schema (`int32 step_index`, `string actor_id`, `bytes action_taken`, `bytes state_snapshot`, `float64 reward_delta`, `bool is_terminal`)
 
 ### 2.4 Code Generation
-- [ ] Install `protoc`, `protoc-gen-go`, and `protoc-gen-go-grpc` and document versions in `README.md`
-- [ ] Add a `make proto` target that runs `protoc` over all `.proto` files and outputs to `api/proto/gen/`
-- [ ] Commit the generated `*.pb.go` and `*_grpc.pb.go` files (or document the generation step clearly)
-- [ ] Write a smoke-test that imports the generated package and instantiates one message of each type to confirm generation is correct
+- [x] Install `protoc`, `protoc-gen-go`, and `protoc-gen-go-grpc` and document versions in `README.md`
+- [x] Add a `make proto` target that runs `protoc` over all `.proto` files and outputs to `api/proto/gen/`
+- [x] Commit the generated `*.pb.go` and `*_grpc.pb.go` files (or document the generation step clearly)
+- [x] Write a smoke-test that imports the generated package and instantiates one message of each type to confirm generation is correct
 
 ---
 

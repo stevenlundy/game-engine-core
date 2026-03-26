@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package gameengine.v1;
+
+option go_package = "github.com/game-engine/game-engine-core/api/proto/gen;enginepb";
+
+// JSON is a wrapper for opaque JSON payloads transported as raw bytes.
+message JSON {
+  bytes data = 1;
+}
+
+// State represents a snapshot of a game at a given step.
+message State {
+  // payload holds the opaque, game-specific encoded state.
+  bytes payload = 1;
+  // game_id identifies the game type or session.
+  string game_id = 2;
+  // step_index is the monotonically increasing step counter.
+  int64 step_index = 3;
+}
+
+// Action represents a single move performed by an actor.
+message Action {
+  // actor_id identifies the player or AI that produced this action.
+  string actor_id = 1;
+  // payload holds the opaque, game-specific encoded action.
+  bytes payload = 2;
+  // timestamp_ms is the wall-clock time when the action was recorded (Unix ms).
+  int64 timestamp_ms = 3;
+}
+
+// StateUpdate is sent from the server to a player after each transition.
+message StateUpdate {
+  // state is the new game state after the action was applied.
+  State state = 1;
+  // reward_delta is the immediate reward (or score change) for the actor.
+  double reward_delta = 2;
+  // is_terminal flags whether this update ends the game.
+  bool is_terminal = 3;
+  // actor_id identifies which player this update is addressed to.
+  string actor_id = 4;
+}
+
+// SessionMetadata records context for a single game session.
+message SessionMetadata {
+  // session_id is the unique identifier for this session.
+  string session_id = 1;
+  // ruleset_version identifies the game rules in use.
+  string ruleset_version = 2;
+  // player_ids lists all participating player identifiers.
+  repeated string player_ids = 3;
+  // start_time_unix is the session start time as a Unix timestamp (seconds).
+  int64 start_time_unix = 4;
+}

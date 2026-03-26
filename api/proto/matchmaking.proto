@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package gameengine.v1;
+
+option go_package = "github.com/game-engine/game-engine-core/api/proto/gen;enginepb";
+
+// JoinRequest is sent by a player wishing to enter a lobby.
+message JoinRequest {
+  // player_id uniquely identifies the requesting player.
+  string player_id = 1;
+  // game_type specifies which game the player wants to play.
+  string game_type = 2;
+  // config carries optional, game-specific configuration bytes.
+  bytes config = 3;
+}
+
+// JoinResponse is returned when a lobby action (e.g. cancel) completes.
+message JoinResponse {
+  // session_id is the lobby or session identifier (may be empty if not yet assigned).
+  string session_id = 1;
+  // status is a human-readable status string (e.g. "waiting", "cancelled").
+  string status = 2;
+  // player_ids lists all players currently in the session or lobby.
+  repeated string player_ids = 3;
+}
+
+// LobbyStatusUpdate is streamed to players while they wait in a lobby.
+message LobbyStatusUpdate {
+  // session_id identifies the lobby.
+  string session_id = 1;
+  // ready_players lists the player IDs that have confirmed readiness.
+  repeated string ready_players = 2;
+  // game_starting is true on the final update, signalling the game is about to begin.
+  bool game_starting = 3;
+}
+
+// Matchmaking manages player lobbies and session creation.
+service Matchmaking {
+  // JoinLobby places the player in a lobby and streams status updates until the
+  // game starts or the request is cancelled.
+  rpc JoinLobby(JoinRequest) returns (stream LobbyStatusUpdate);
+
+  // CancelJoin removes a waiting player from the lobby.
+  rpc CancelJoin(JoinRequest) returns (JoinResponse);
+}
