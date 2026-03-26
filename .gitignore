@@ -33,3 +33,4 @@ api/proto/gen/
 .vscode/
 *.swp
 *.swo
+testserver
