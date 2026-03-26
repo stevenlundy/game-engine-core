@@ -365,32 +365,32 @@
 **Goal:** An npm-installable TypeScript package for server-side Node.js AI bots using `@grpc/grpc-js`.
 
 ### 10.1 Project Setup
-- [ ] Create `clients/ts-node/package.json` — name `game-engine-core-node`, version `0.1.0`, `main: "dist/index.js"`, `types: "dist/index.d.ts"`
-- [ ] Add dependencies: `@grpc/grpc-js`, `@grpc/proto-loader`, `google-protobuf`; add dev dependencies: `typescript`, `ts-proto`, `@types/node`, `jest`, `ts-jest`
-- [ ] Create `clients/ts-node/tsconfig.json` targeting `ES2022`, `moduleResolution: node`, `strict: true`, output to `dist/`
-- [ ] Add a `Makefile` target `proto-ts-node` that runs `ts-proto`'s `protoc` plugin to compile `api/proto/*.proto` into `clients/ts-node/src/proto/`
-- [ ] Add `.nvmrc` pinning Node `20 LTS`
-- [ ] Add `build`, `test`, `proto` npm scripts to `package.json`
+- [x] Create `clients/ts-node/package.json` — name `game-engine-core-node`, version `0.1.0`, `main: "dist/index.js"`, `types: "dist/index.d.ts"`
+- [x] Add dependencies: `@grpc/grpc-js`, `@grpc/proto-loader`, `google-protobuf`; add dev dependencies: `typescript`, `ts-proto`, `@types/node`, `jest`, `ts-jest`
+- [x] Create `clients/ts-node/tsconfig.json` targeting `ES2022`, `moduleResolution: node`, `strict: true`, output to `dist/`
+- [x] Add a `Makefile` target `proto-ts-node` that runs `ts-proto`'s `protoc` plugin to compile `api/proto/*.proto` into `clients/ts-node/src/proto/`
+- [x] Add `.nvmrc` pinning Node `20 LTS`
+- [x] Add `build`, `test`, `proto` npm scripts to `package.json`
 
 ### 10.2 `GameClient` Base Class (`src/client.ts`)
-- [ ] Define `GameClient` class with `constructor(serverUrl: string, playerId: string)` that creates a `@grpc/grpc-js` channel
-- [ ] Implement `joinLobby(gameType: string): Promise<string>` that calls `Matchmaking.JoinLobby` and resolves with `session_id` when `game_starting=true`
-- [ ] Implement `run(): Promise<void>` that opens the `GameSession.Play` bidi stream, sends the initial join action, then loops: receives `StateUpdate`, calls `onStateUpdate()`, sends back the returned `Action`
-- [ ] Define `abstract onStateUpdate(state: StateUpdate): Action | Promise<Action>` — the single method subclasses override
-- [ ] Implement `close(): void` for clean channel shutdown
-- [ ] Export `StateUpdate`, `Action`, and `GameClient` from `src/index.ts`
+- [x] Define `GameClient` class with `constructor(serverUrl: string, playerId: string)` that creates a `@grpc/grpc-js` channel
+- [x] Implement `joinLobby(gameType: string): Promise<string>` that calls `Matchmaking.JoinLobby` and resolves with `session_id` when `game_starting=true`
+- [x] Implement `run(): Promise<void>` that opens the `GameSession.Play` bidi stream, sends the initial join action, then loops: receives `StateUpdate`, calls `onStateUpdate()`, sends back the returned `Action`
+- [x] Define `abstract onStateUpdate(state: StateUpdate): Action | Promise<Action>` — the single method subclasses override
+- [x] Implement `close(): void` for clean channel shutdown
+- [x] Export `StateUpdate`, `Action`, and `GameClient` from `src/index.ts`
 
 ### 10.3 Helper Utilities
-- [ ] Add `src/actions.ts` with `playCard(rank: string, suit: string, declaredSuit?: string): Action` and `drawCard(): Action` factory functions
-- [ ] Add `src/state.ts` with a `RichState` interface and `parseRichState(update: StateUpdate): RichState` helper
+- [x] Add `src/actions.ts` with `playCard(rank: string, suit: string, declaredSuit?: string): Action` and `drawCard(): Action` factory functions
+- [x] Add `src/state.ts` with a `RichState` interface and `parseRichState(update: StateUpdate): RichState` helper
 
 ### 10.4 Tests
-- [ ] Write `tests/client.test.ts` using `jest` — mock the gRPC channel to verify `run()` calls `onStateUpdate()` for each `StateUpdate` and sends back the returned `Action`
-- [ ] Confirm `npm test` passes with zero failures
+- [x] Write `tests/client.test.ts` using `jest` — mock the gRPC channel to verify `run()` calls `onStateUpdate()` for each `StateUpdate` and sends back the returned `Action`
+- [x] Confirm `npm test` passes with zero failures
 
 ### 10.5 Documentation
-- [ ] Add `clients/ts-node/README.md` covering: install (`npm install`), quickstart subclassing example, `proto` regeneration step
-- [ ] Add `clients/ts-node/examples/randomAgent.ts` showing the minimal subclass
+- [x] Add `clients/ts-node/README.md` covering: install (`npm install`), quickstart subclassing example, `proto` regeneration step
+- [x] Add `clients/ts-node/examples/randomAgent.ts` showing the minimal subclass
 
 ---
 
@@ -399,31 +399,31 @@
 **Goal:** A browser-compatible TypeScript package using `grpc-web` for in-browser visualizers and web UIs.
 
 ### 11.1 Project Setup
-- [ ] Create `clients/ts-web/package.json` — name `game-engine-core-web`, version `0.1.0`, `main: "dist/index.js"`, `types: "dist/index.d.ts"`
-- [ ] Add dependencies: `grpc-web`, `google-protobuf`; add dev dependencies: `typescript`, `ts-proto`, `webpack` (or `vite`), `jest`, `ts-jest`
-- [ ] Create `clients/ts-web/tsconfig.json` targeting `ES2020`, `lib: ["ES2020", "DOM"]`, `strict: true`, output to `dist/`
-- [ ] Add a `Makefile` target `proto-ts-web` that compiles `api/proto/*.proto` into `clients/ts-web/src/proto/` using `ts-proto` in `grpc-web` mode (unary + server-streaming only — no bidi in browsers)
-- [ ] Add `.nvmrc` pinning Node `20 LTS`
-- [ ] Add `build`, `test`, `proto` npm scripts to `package.json`
+- [x] Create `clients/ts-web/package.json` — name `game-engine-core-web`, version `0.1.0`, `main: "dist/index.js"`, `types: "dist/index.d.ts"`
+- [x] Add dependencies: `grpc-web`, `google-protobuf`; add dev dependencies: `typescript`, `ts-proto`, `webpack` (or `vite`), `jest`, `ts-jest`
+- [x] Create `clients/ts-web/tsconfig.json` targeting `ES2020`, `lib: ["ES2020", "DOM"]`, `strict: true`, output to `dist/`
+- [x] Add a `Makefile` target `proto-ts-web` that compiles `api/proto/*.proto` into `clients/ts-web/src/proto/` using `ts-proto` in `grpc-web` mode (unary + server-streaming only — no bidi in browsers)
+- [x] Add `.nvmrc` pinning Node `20 LTS`
+- [x] Add `build`, `test`, `proto` npm scripts to `package.json`
 
 ### 11.2 `GameWebClient` Base Class (`src/client.ts`)
-- [ ] Define `GameWebClient` class with `constructor(serverUrl: string, playerId: string)` using a `grpc-web` client
-- [ ] Note: browsers do not support bidi streaming — implement a **polling / server-streaming** model: `watchSession(sessionId: string): void` that subscribes to `StateUpdate` events via `GetReplay` stream or a dedicated watch RPC
-- [ ] Implement `onStateUpdate(state: StateUpdate): void` as the override point (web clients observe state; actions are submitted via a separate unary `SubmitAction` call if a suitable RPC exists, or noted as out-of-scope)
-- [ ] Export `GameWebClient`, `StateUpdate` from `src/index.ts`
+- [x] Define `GameWebClient` class with `constructor(serverUrl: string, playerId: string)` using a `grpc-web` client
+- [x] Note: browsers do not support bidi streaming — implement a **polling / server-streaming** model: `watchSession(sessionId: string): void` that subscribes to `StateUpdate` events via `GetReplay` stream or a dedicated watch RPC
+- [x] Implement `onStateUpdate(state: StateUpdate): void` as the override point (web clients observe state; actions are submitted via a separate unary `SubmitAction` call if a suitable RPC exists, or noted as out-of-scope)
+- [x] Export `GameWebClient`, `StateUpdate` from `src/index.ts`
 
 ### 11.3 Helper Utilities
-- [ ] Add `src/state.ts` with `RichState` interface and `parseRichState` helper (same shape as ts-node)
-- [ ] Add `src/replay.ts` with `ReplayPlayer` class that reads a `.glog` (fetched as JSON-L text) and emits entries at configurable speed — useful for post-game visualization
+- [x] Add `src/state.ts` with `RichState` interface and `parseRichState` helper (same shape as ts-node)
+- [x] Add `src/replay.ts` with `ReplayPlayer` class that reads a `.glog` (fetched as JSON-L text) and emits entries at configurable speed — useful for post-game visualization
 
 ### 11.4 Tests
-- [ ] Write `tests/client.test.ts` using `jest` with `jsdom` environment — mock `grpc-web` transport and confirm `onStateUpdate` is called for each emitted `StateUpdate`
-- [ ] Write tests for `ReplayPlayer` — confirm entries are emitted in order and `stop()` halts playback
-- [ ] Confirm `npm test` passes with zero failures
+- [x] Write `tests/client.test.ts` using `jest` with `jsdom` environment — mock `grpc-web` transport and confirm `onStateUpdate` is called for each emitted `StateUpdate`
+- [x] Write tests for `ReplayPlayer` — confirm entries are emitted in order and `stop()` halts playback
+- [x] Confirm `npm test` passes with zero failures
 
 ### 11.5 Documentation
-- [ ] Add `clients/ts-web/README.md` covering: install, browser compatibility notes, gRPC-Web proxy requirement (Envoy), quickstart observer example
-- [ ] Add `clients/ts-web/examples/replayViewer.ts` showing `ReplayPlayer` usage
+- [x] Add `clients/ts-web/README.md` covering: install, browser compatibility notes, gRPC-Web proxy requirement (Envoy), quickstart observer example
+- [x] Add `clients/ts-web/examples/replayViewer.ts` showing `ReplayPlayer` usage
 
 ---
 
