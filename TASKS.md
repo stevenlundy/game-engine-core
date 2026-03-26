@@ -79,24 +79,24 @@
 **Goal:** Define the single Go interface every game implementation must satisfy, with supporting types.
 
 ### 3.1 Core Types (`pkg/engine/types.go`)
-- [ ] Define `type JSON = json.RawMessage` type alias (or thin wrapper) for config/state payloads
-- [ ] Define `type State struct` with fields: `GameID string`, `StepIndex int64`, `Payload json.RawMessage`
-- [ ] Define `type Action struct` with fields: `ActorID string`, `Payload json.RawMessage`, `TimestampMs int64`
-- [ ] Define `type TerminalResult struct` with fields: `IsOver bool`, `WinnerID string`
+- [x] Define `type JSON = json.RawMessage` type alias (or thin wrapper) for config/state payloads
+- [x] Define `type State struct` with fields: `GameID string`, `StepIndex int64`, `Payload json.RawMessage`
+- [x] Define `type Action struct` with fields: `ActorID string`, `Payload json.RawMessage`, `TimestampMs int64`
+- [x] Define `type TerminalResult struct` with fields: `IsOver bool`, `WinnerID string`
 
 ### 3.2 Interface Definition (`pkg/engine/game_logic.go`)
-- [ ] Declare the `GameLogic` interface with `GetInitialState(config JSON) (State, error)`
-- [ ] Add `ValidateAction(state State, action Action) error` to `GameLogic`
-- [ ] Add `ApplyAction(state State, action Action) (newState State, reward float64, err error)` to `GameLogic`
-- [ ] Add `IsTerminal(state State) (TerminalResult, error)` to `GameLogic`
-- [ ] Add `GetRichState(state State) (interface{}, error)` to `GameLogic`
-- [ ] Add `GetTensorState(state State) ([]float32, error)` to `GameLogic`
-- [ ] Write GoDoc comments on every method explaining contract, expected errors, and nil safety
-- [ ] Add a compile-time interface guard pattern (e.g., `var _ GameLogic = (*noopGame)(nil)`) in a `_test.go` file
+- [x] Declare the `GameLogic` interface with `GetInitialState(config JSON) (State, error)`
+- [x] Add `ValidateAction(state State, action Action) error` to `GameLogic`
+- [x] Add `ApplyAction(state State, action Action) (newState State, reward float64, err error)` to `GameLogic`
+- [x] Add `IsTerminal(state State) (TerminalResult, error)` to `GameLogic`
+- [x] Add `GetRichState(state State) (interface{}, error)` to `GameLogic`
+- [x] Add `GetTensorState(state State) ([]float32, error)` to `GameLogic`
+- [x] Write GoDoc comments on every method explaining contract, expected errors, and nil safety
+- [x] Add a compile-time interface guard pattern (e.g., `var _ GameLogic = (*noopGame)(nil)`) in a `_test.go` file
 
 ### 3.3 No-Op / Stub Implementation (`pkg/engine/noop_game.go`)
-- [ ] Implement `noopGame` struct that satisfies `GameLogic` with minimal valid behaviour (for testing the runner in isolation)
-- [ ] Write unit tests confirming `noopGame` compiles and each method returns its zero value without panicking
+- [x] Implement `noopGame` struct that satisfies `GameLogic` with minimal valid behaviour (for testing the runner in isolation)
+- [x] Write unit tests confirming `noopGame` compiles and each method returns its zero value without panicking
 
 ---
 
