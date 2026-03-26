@@ -182,37 +182,37 @@
 **Goal:** The core execution loop that drives `GameLogic`, enforces timeouts, and orchestrates Live vs. Headless modes.
 
 ### 5.1 Session Model (`pkg/engine/session.go`)
-- [ ] Define `SessionConfig` struct (`SessionID string`, `GameType string`, `PlayerIDs []string`, `InitialConfig JSON`, `Mode RunMode`, `AITimeout time.Duration`, `ReplayPath string`)
-- [ ] Define `RunMode` type with constants `RunModeLive` and `RunModeHeadless`
-- [ ] Define `Session` struct holding `Config SessionConfig`, `State State`, `Logic GameLogic`, `Log *ReplayLog`, and internal step counter
-- [ ] Implement `NewSession(cfg SessionConfig, logic GameLogic) (*Session, error)`
+- [x] Define `SessionConfig` struct (`SessionID string`, `GameType string`, `PlayerIDs []string`, `InitialConfig JSON`, `Mode RunMode`, `AITimeout time.Duration`, `ReplayPath string`)
+- [x] Define `RunMode` type with constants `RunModeLive` and `RunModeHeadless`
+- [x] Define `Session` struct holding `Config SessionConfig`, `State State`, `Logic GameLogic`, `Log *ReplayLog`, and internal step counter
+- [x] Implement `NewSession(cfg SessionConfig, logic GameLogic) (*Session, error)`
 
 ### 5.2 Action Dispatcher (`pkg/engine/dispatcher.go`)
-- [ ] Define `PlayerAdapter` interface with `RequestAction(ctx context.Context, update StateUpdate) (Action, error)` — the abstraction over gRPC client, in-process AI, or random fallback
-- [ ] Implement `RandomFallbackAdapter` that returns a randomly-chosen valid action (used when the AI timer expires)
-- [ ] Implement `TimeoutAdapter` wrapper that wraps any `PlayerAdapter`, starts a `TurnTimer`, and calls the fallback if the inner adapter does not respond within `AITimeout`
+- [x] Define `PlayerAdapter` interface with `RequestAction(ctx context.Context, update StateUpdate) (Action, error)` — the abstraction over gRPC client, in-process AI, or random fallback
+- [x] Implement `RandomFallbackAdapter` that returns a randomly-chosen valid action (used when the AI timer expires)
+- [x] Implement `TimeoutAdapter` wrapper that wraps any `PlayerAdapter`, starts a `TurnTimer`, and calls the fallback if the inner adapter does not respond within `AITimeout`
 
 ### 5.3 Game Loop (`pkg/engine/runner.go`)
-- [ ] Implement `Runner.Run(ctx context.Context, session *Session, players map[string]PlayerAdapter) error`
-- [ ] In the loop: call `Logic.IsTerminal` → if not terminal, determine active player, send `StateUpdate` via `PlayerAdapter`, receive `Action`
-- [ ] Call `Logic.ValidateAction`; on error, either reject and re-prompt (Live) or apply fallback (Headless)
-- [ ] Call `Logic.ApplyAction` and update `session.State`
-- [ ] Write each transition to `session.Log` (see Phase 6)
-- [ ] Increment step counter and loop
-- [ ] On terminal state: write final log entry with `is_terminal: true`, flush and close the `ReplayLog`
-- [ ] Emit a structured `slog` / `log/slog` log line for each step in Live mode; suppress in Headless mode
+- [x] Implement `Runner.Run(ctx context.Context, session *Session, players map[string]PlayerAdapter) error`
+- [x] In the loop: call `Logic.IsTerminal` → if not terminal, determine active player, send `StateUpdate` via `PlayerAdapter`, receive `Action`
+- [x] Call `Logic.ValidateAction`; on error, either reject and re-prompt (Live) or apply fallback (Headless)
+- [x] Call `Logic.ApplyAction` and update `session.State`
+- [x] Write each transition to `session.Log` (see Phase 6)
+- [x] Increment step counter and loop
+- [x] On terminal state: write final log entry with `is_terminal: true`, flush and close the `ReplayLog`
+- [x] Emit a structured `slog` / `log/slog` log line for each step in Live mode; suppress in Headless mode
 
 ### 5.4 Live Mode Specifics
-- [ ] Implement configurable per-human move timeout (default 30s) separately from the 50ms AI timeout
-- [ ] Implement graceful disconnect handling: if a gRPC stream drops mid-game, mark that player's actions as forfeit and continue
-- [ ] Emit `StateUpdate` to all connected spectator streams after each action (broadcast)
+- [x] Implement configurable per-human move timeout (default 30s) separately from the 50ms AI timeout
+- [x] Implement graceful disconnect handling: if a gRPC stream drops mid-game, mark that player's actions as forfeit and continue
+- [x] Emit `StateUpdate` to all connected spectator streams after each action (broadcast)
 
 ### 5.5 Headless Mode Specifics
-- [ ] Suppress all `slog` output in Headless mode (use a `DiscardHandler`)
-- [ ] Ensure no blocking I/O occurs during the game loop (all log writes go through the buffer — see Phase 6)
-- [ ] Add a `BatchRunner` that accepts a slice of `SessionConfig` and runs them concurrently using a worker pool with configurable parallelism
-- [ ] Implement `BatchRunner.RunAll(ctx context.Context, configs []SessionConfig) ([]BatchResult, error)` returning per-session outcomes
-- [ ] Benchmark `BatchRunner` with the `noopGame` and document achievable games/second in `README.md`
+- [x] Suppress all `slog` output in Headless mode (use a `DiscardHandler`)
+- [x] Ensure no blocking I/O occurs during the game loop (all log writes go through the buffer — see Phase 6)
+- [x] Add a `BatchRunner` that accepts a slice of `SessionConfig` and runs them concurrently using a worker pool with configurable parallelism
+- [x] Implement `BatchRunner.RunAll(ctx context.Context, configs []SessionConfig) ([]BatchResult, error)` returning per-session outcomes
+- [x] Benchmark `BatchRunner` with the `noopGame` and document achievable games/second in `README.md`
 
 ---
 
@@ -253,32 +253,32 @@
 **Goal:** Wire the engine to the network using the proto definitions from Phase 2.
 
 ### 7.1 Server (`pkg/transport/server.go`)
-- [ ] Implement `MatchmakingServer` struct satisfying the generated `MatchmakingServer` gRPC interface
-- [ ] Implement `MatchmakingServer.JoinLobby` — adds the player to an in-memory lobby, streams `LobbyStatusUpdate` until the lobby is full, then triggers session creation
-- [ ] Implement `MatchmakingServer.CancelJoin` — removes a player from the pending lobby
-- [ ] Implement `GameSessionServer` struct satisfying the generated `GameSessionServer` gRPC interface
-- [ ] Implement `GameSessionServer.Play` — receives the bidirectional stream, adapts it to a `PlayerAdapter`, hands off to the `Runner`, and streams `StateUpdate` back to the client
-- [ ] Implement `GameSessionServer.GetReplay` — opens the `.glog` for a given `session_id` and streams `ReplayEntry` messages
-- [ ] Add server-side interceptors for: request logging, panic recovery, and context-deadline propagation
-- [ ] Implement `NewGRPCServer(logic GameLogic, opts ServerOptions) *grpc.Server` as the public constructor
+- [x] Implement `MatchmakingServer` struct satisfying the generated `MatchmakingServer` gRPC interface
+- [x] Implement `MatchmakingServer.JoinLobby` — adds the player to an in-memory lobby, streams `LobbyStatusUpdate` until the lobby is full, then triggers session creation
+- [x] Implement `MatchmakingServer.CancelJoin` — removes a player from the pending lobby
+- [x] Implement `GameSessionServer` struct satisfying the generated `GameSessionServer` gRPC interface
+- [x] Implement `GameSessionServer.Play` — receives the bidirectional stream, adapts it to a `PlayerAdapter`, hands off to the `Runner`, and streams `StateUpdate` back to the client
+- [x] Implement `GameSessionServer.GetReplay` — opens the `.glog` for a given `session_id` and streams `ReplayEntry` messages
+- [x] Add server-side interceptors for: request logging, panic recovery, and context-deadline propagation
+- [x] Implement `NewGRPCServer(logic GameLogic, opts ServerOptions) *grpc.Server` as the public constructor
 
 ### 7.2 Client Boilerplate (`pkg/transport/client.go`)
-- [ ] Implement `MatchmakingClient` wrapper with `Join(ctx context.Context, req JoinRequest) (<-chan LobbyStatusUpdate, error)` convenience method
-- [ ] Implement `GameClient` wrapper with `Play(ctx context.Context) (ActionSender, StateUpdateReceiver, error)` that hides stream management boilerplate
-- [ ] Define `ActionSender` interface (`Send(Action) error`, `Close() error`) and `StateUpdateReceiver` interface (`Recv() (StateUpdate, error)`)
-- [ ] Implement a `GRPCPlayerAdapter` that wraps a `GameClient` stream to satisfy the `PlayerAdapter` interface from Phase 5
-- [ ] Add client-side interceptors for: retry with exponential back-off on transient errors, and deadline injection
+- [x] Implement `MatchmakingClient` wrapper with `Join(ctx context.Context, req JoinRequest) (<-chan LobbyStatusUpdate, error)` convenience method
+- [x] Implement `GameClient` wrapper with `Play(ctx context.Context) (ActionSender, StateUpdateReceiver, error)` that hides stream management boilerplate
+- [x] Define `ActionSender` interface (`Send(Action) error`, `Close() error`) and `StateUpdateReceiver` interface (`Recv() (StateUpdate, error)`)
+- [x] Implement a `GRPCPlayerAdapter` that wraps a `GameClient` stream to satisfy the `PlayerAdapter` interface from Phase 5
+- [x] Add client-side interceptors for: retry with exponential back-off on transient errors, and deadline injection
 
 ### 7.3 Server Entry Point (`cmd/server/main.go`)
-- [ ] Implement `main.go` that reads config from env vars (`PORT`, `GAME_TYPE`, `HEADLESS`, `LOG_DIR`)
-- [ ] Registers `MatchmakingServer` and `GameSessionServer` with the gRPC server
-- [ ] Enables gRPC server reflection (for `grpcurl` / `evans` tooling)
-- [ ] Handles `SIGTERM` / `SIGINT` for graceful shutdown (drain in-flight sessions, flush all open `ReplayLog` writers)
+- [x] Implement `main.go` that reads config from env vars (`PORT`, `GAME_TYPE`, `HEADLESS`, `LOG_DIR`)
+- [x] Registers `MatchmakingServer` and `GameSessionServer` with the gRPC server
+- [x] Enables gRPC server reflection (for `grpcurl` / `evans` tooling)
+- [x] Handles `SIGTERM` / `SIGINT` for graceful shutdown (drain in-flight sessions, flush all open `ReplayLog` writers)
 
 ### 7.4 TLS & Auth (Internal)
-- [ ] Add `internal/auth/` package with a token-based gRPC interceptor (validates a shared secret via metadata)
-- [ ] Add `internal/tls/` helper that loads a TLS cert/key pair and returns a `credentials.TransportCredentials`
-- [ ] Document how to generate a self-signed cert for local development in `README.md`
+- [x] Add `internal/auth/` package with a token-based gRPC interceptor (validates a shared secret via metadata)
+- [x] Add `internal/tls/` helper that loads a TLS cert/key pair and returns a `credentials.TransportCredentials`
+- [x] Document how to generate a self-signed cert for local development in `README.md`
 
 ---
 

@@ -6,6 +6,11 @@ package engine
 // performing no actual computation.
 type noopGame struct{}
 
+// NewNoopGame returns a [GameLogic] implementation whose every method is a
+// no-op. It is intended for use in tests, server stubs, and benchmarks where a
+// concrete game is not required.
+func NewNoopGame() GameLogic { return &noopGame{} }
+
 // GetInitialState returns a zero-value State and no error.
 func (n *noopGame) GetInitialState(_ JSON) (State, error) {
 	return State{}, nil
