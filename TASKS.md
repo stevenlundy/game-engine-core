@@ -287,38 +287,38 @@
 **Goal:** Confidence that every component works correctly in isolation and together end-to-end.
 
 ### 8.1 Unit Tests (per package)
-- [ ] `pkg/components/cards`: ≥90% coverage — deck, shuffle distribution, deal edge cases, hand masking
-- [ ] `pkg/components/grid`: ≥90% coverage — bounds checking for 2D and 3D, all distance functions, occupancy map operations
-- [ ] `pkg/components/timing`: timer fires on time, timer cancelled cleanly, elapsed time accuracy
-- [ ] `pkg/engine` types & interface: `noopGame` satisfies `GameLogic`, `State`/`Action` marshal round-trip
-- [ ] `pkg/engine` replay: metadata + entry write/read round-trip (plain and GZIP), `Close` without `Flush` is safe
+- [x] `pkg/components/cards`: ≥90% coverage — deck, shuffle distribution, deal edge cases, hand masking
+- [x] `pkg/components/grid`: ≥90% coverage — bounds checking for 2D and 3D, all distance functions, occupancy map operations
+- [x] `pkg/components/timing`: timer fires on time, timer cancelled cleanly, elapsed time accuracy
+- [x] `pkg/engine` types & interface: `noopGame` satisfies `GameLogic`, `State`/`Action` marshal round-trip
+- [x] `pkg/engine` replay: metadata + entry write/read round-trip (plain and GZIP), `Close` without `Flush` is safe
 
 ### 8.2 Runner Integration Tests
-- [ ] Write a deterministic `countdownGame` (counts down from N to 0) that implements `GameLogic` and terminates after exactly N steps
-- [ ] Test `Runner.Run` in Live mode with two `RandomFallbackAdapter` players and confirm the game terminates and writes a valid `.glog`
-- [ ] Test `Runner.Run` in Headless mode and confirm GZIP `.glog` is produced and passes the reader round-trip test
-- [ ] Test that the 50ms AI timeout fires: use a `PlayerAdapter` that sleeps 200ms and confirm `RandomFallbackAdapter` was used instead
-- [ ] Test graceful handling of `ValidateAction` returning an error (runner does not crash, fallback is applied)
+- [x] Write a deterministic `countdownGame` (counts down from N to 0) that implements `GameLogic` and terminates after exactly N steps
+- [x] Test `Runner.Run` in Live mode with two `RandomFallbackAdapter` players and confirm the game terminates and writes a valid `.glog`
+- [x] Test `Runner.Run` in Headless mode and confirm GZIP `.glog` is produced and passes the reader round-trip test
+- [x] Test that the 50ms AI timeout fires: use a `PlayerAdapter` that sleeps 200ms and confirm `RandomFallbackAdapter` was used instead
+- [x] Test graceful handling of `ValidateAction` returning an error (runner does not crash, fallback is applied)
 
 ### 8.3 gRPC End-to-End Tests
-- [ ] Use `google.golang.org/grpc/test/bufconn` (in-memory listener) to stand up a real gRPC server in tests without a port
-- [ ] Test `JoinLobby`: two clients join the same game type; confirm both receive a `game_starting: true` update
-- [ ] Test `Play`: full two-player game of `countdownGame` over gRPC streams; confirm all `StateUpdate` messages arrive and the game terminates correctly
-- [ ] Test `GetReplay`: after a completed session, stream the replay and confirm entry count matches step count
+- [x] Use `google.golang.org/grpc/test/bufconn` (in-memory listener) to stand up a real gRPC server in tests without a port
+- [x] Test `JoinLobby`: two clients join the same game type; confirm both receive a `game_starting: true` update
+- [x] Test `Play`: full two-player game of `countdownGame` over gRPC streams; confirm all `StateUpdate` messages arrive and the game terminates correctly
+- [x] Test `GetReplay`: after a completed session, stream the replay and confirm entry count matches step count
 
 ### 8.4 Benchmark Suite
-- [ ] `BenchmarkShuffle` — Fisher-Yates on a 52-card deck
-- [ ] `BenchmarkGrid2DSetGet` — random reads/writes on a 100×100 grid
-- [ ] `BenchmarkRunnerHeadless` — `countdownGame` with N=100 steps, measure ns/game
-- [ ] `BenchmarkBatchRunner` — 1,000 concurrent headless games, measure total wall time and games/second
-- [ ] `BenchmarkReplayLogWrite` — 10,000 entry writes, compare plain vs. GZIP throughput
+- [x] `BenchmarkShuffle` — Fisher-Yates on a 52-card deck
+- [x] `BenchmarkGrid2DSetGet` — random reads/writes on a 100×100 grid
+- [x] `BenchmarkRunnerHeadless` — `countdownGame` with N=100 steps, measure ns/game
+- [x] `BenchmarkBatchRunner` — 1,000 concurrent headless games, measure total wall time and games/second
+- [x] `BenchmarkReplayLogWrite` — 10,000 entry writes, compare plain vs. GZIP throughput
 
 ### 8.5 Documentation & Handoff
-- [ ] Write `README.md` covering: purpose, quick-start (clone → `make proto` → `make build`), directory map, how to implement a new game, how to run in headless mode, and how to parse a `.glog`
-- [ ] Add `CONTRIBUTING.md` covering: branch naming, PR checklist (tests, lint, proto regen), and code style rules
-- [ ] Add Go example file `examples/minimal_game/main.go` showing the smallest possible `GameLogic` implementation wired to the runner
-- [ ] Confirm `go doc ./...` produces clean output (no unexported symbols leaking into docs)
-- [ ] Tag `v0.1.0` once all Phase 1–7 checkboxes are complete and CI is green
+- [x] Write `README.md` covering: purpose, quick-start (clone → `make proto` → `make build`), directory map, how to implement a new game, how to run in headless mode, and how to parse a `.glog`
+- [x] Add `CONTRIBUTING.md` covering: branch naming, PR checklist (tests, lint, proto regen), and code style rules
+- [x] Add Go example file `examples/minimal_game/main.go` showing the smallest possible `GameLogic` implementation wired to the runner
+- [x] Confirm `go doc ./...` produces clean output (no unexported symbols leaking into docs)
+- [x] Tag `v0.1.0` once all Phase 1–7 checkboxes are complete and CI is green
 
 ---
 

@@ -371,6 +371,140 @@ func TestOccupancyMap_AllOccupied_Empty(t *testing.T) {
 	}
 }
 
+// =============================================================================
+// Additional Grid2D edge cases
+// =============================================================================
+
+func TestGrid2D_ZeroDimensions(t *testing.T) {
+	g := NewGrid2D[int](0, 0)
+	if g.InBounds(Vec2{0, 0}) {
+		t.Error("0×0 grid: (0,0) should be out of bounds")
+	}
+	_, err := g.Get(Vec2{0, 0})
+	if !errors.Is(err, ErrOutOfBounds) {
+		t.Errorf("0×0 Get: expected ErrOutOfBounds, got %v", err)
+	}
+}
+
+func TestGrid2D_SingleCell(t *testing.T) {
+	g := NewGrid2D[int](1, 1)
+	if !g.InBounds(Vec2{0, 0}) {
+		t.Error("1×1 grid: (0,0) should be in bounds")
+	}
+	if err := g.Set(Vec2{0, 0}, 42); err != nil {
+		t.Fatalf("Set 1×1: %v", err)
+	}
+	v, err := g.Get(Vec2{0, 0})
+	if err != nil {
+		t.Fatalf("Get 1×1: %v", err)
+	}
+	if v != 42 {
+		t.Errorf("Get = %d, want 42", v)
+	}
+}
+
+func TestGrid2D_Neighbors4_1x1(t *testing.T) {
+	g := NewGrid2D[int](1, 1)
+	n := g.Neighbors4(Vec2{0, 0})
+	if len(n) != 0 {
+		t.Errorf("1×1 grid Neighbors4(0,0) = %d, want 0", len(n))
+	}
+}
+
+func TestGrid2D_Neighbors8_1x1(t *testing.T) {
+	g := NewGrid2D[int](1, 1)
+	n := g.Neighbors8(Vec2{0, 0})
+	if len(n) != 0 {
+		t.Errorf("1×1 grid Neighbors8(0,0) = %d, want 0", len(n))
+	}
+}
+
+func TestGrid2D_AllCorners(t *testing.T) {
+	g := NewGrid2D[int](4, 4)
+	corners := []Vec2{{0, 0}, {3, 0}, {0, 3}, {3, 3}}
+	for _, c := range corners {
+		n4 := g.Neighbors4(c)
+		if len(n4) != 2 {
+			t.Errorf("Neighbors4(%v) = %d, want 2", c, len(n4))
+		}
+		n8 := g.Neighbors8(c)
+		if len(n8) != 3 {
+			t.Errorf("Neighbors8(%v) = %d, want 3", c, len(n8))
+		}
+	}
+}
+
+func TestGrid3D_ZeroDimensions(t *testing.T) {
+	g := NewGrid3D[int](0, 0, 0)
+	if g.InBounds(Vec3{0, 0, 0}) {
+		t.Error("0×0×0 grid: (0,0,0) should be out of bounds")
+	}
+}
+
+func TestGrid3D_SingleCell(t *testing.T) {
+	g := NewGrid3D[int](1, 1, 1)
+	if err := g.Set(Vec3{0, 0, 0}, 7); err != nil {
+		t.Fatalf("Set: %v", err)
+	}
+	v, err := g.Get(Vec3{0, 0, 0})
+	if err != nil {
+		t.Fatalf("Get: %v", err)
+	}
+	if v != 7 {
+		t.Errorf("Get = %d, want 7", v)
+	}
+}
+
+func TestOccupancyMap_OccupiedBy_OOB(t *testing.T) {
+	m := NewOccupancyMap(3, 3)
+	id, ok := m.OccupiedBy(Vec2{99, 99})
+	if ok || id != "" {
+		t.Errorf("OccupiedBy OOB: got (%q, %v), want (\"\", false)", id, ok)
+	}
+}
+
+func TestOccupancyMap_MultipleEntities(t *testing.T) {
+	m := NewOccupancyMap(5, 5)
+	entities := map[Vec2]string{
+		{0, 0}: "a",
+		{4, 4}: "b",
+		{2, 2}: "c",
+	}
+	for pos, id := range entities {
+		if err := m.Occupy(pos, id); err != nil {
+			t.Fatalf("Occupy %v: %v", pos, err)
+		}
+	}
+	all := m.AllOccupied()
+	if len(all) != 3 {
+		t.Errorf("AllOccupied = %d, want 3", len(all))
+	}
+	for pos, id := range entities {
+		gotID, ok := m.OccupiedBy(pos)
+		if !ok || gotID != id {
+			t.Errorf("OccupiedBy(%v) = (%q, %v), want (%q, true)", pos, gotID, ok, id)
+		}
+	}
+}
+
+// =============================================================================
+// Benchmark
+// =============================================================================
+
+// BenchmarkGrid2DSetGet measures random set+get operations on a 100×100 grid.
+func BenchmarkGrid2DSetGet(b *testing.B) {
+	const size = 100
+	g := NewGrid2D[int](size, size)
+	b.ResetTimer()
+	for i := range b.N {
+		x := i % size
+		y := (i / size) % size
+		pos := Vec2{x, y}
+		_ = g.Set(pos, i)
+		_, _ = g.Get(pos)
+	}
+}
+
 func TestOccupancyMap_AllOccupied_RowMajorOrder(t *testing.T) {
 	m := NewOccupancyMap(3, 3)
 	// Occupy in non-sorted order

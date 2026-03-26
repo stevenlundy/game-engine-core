@@ -5,6 +5,7 @@ package transport
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log/slog"
@@ -336,18 +337,30 @@ func (a *streamPlayerAdapter) RequestAction(ctx context.Context, update engine.S
 // GameSessionServer
 // ─────────────────────────────────────────────────────────────────────────────
 
+// pendingSessionEntry holds a pre-registered multi-player session waiting for
+// all its player streams to connect. Used by [GameSessionServer.PreRegisterSession].
+type pendingSessionEntry struct {
+	session    *engine.Session
+	adapters   map[string]chan engine.PlayerAdapter // playerID → channel for stream adapter
+	runOnce    sync.Once
+	runDone    chan struct{} // closed when runner exits
+	runErr     error
+}
+
 // GameSessionServer implements [pb.GameSessionServer]. It bridges the gRPC
 // bidirectional [Play] stream to the engine's [engine.Runner] via a
 // [streamPlayerAdapter], and serves completed session replays via [GetReplay].
 type GameSessionServer struct {
 	pb.UnimplementedGameSessionServer
 
-	opts engine.GameLogic
+	opts  engine.GameLogic
 	sOpts ServerOptions
-	log  *slog.Logger
+	log   *slog.Logger
 	// activeSessions tracks in-flight session cancel funcs for graceful drain.
 	mu       sync.Mutex
 	sessions map[string]context.CancelFunc
+	// pending holds pre-registered multi-player sessions waiting for streams.
+	pending map[string]*pendingSessionEntry
 }
 
 // newGameSessionServer constructs a GameSessionServer.
@@ -357,7 +370,31 @@ func newGameSessionServer(opts ServerOptions) *GameSessionServer {
 		opts:     opts.Logic,
 		log:      opts.logger(),
 		sessions: make(map[string]context.CancelFunc),
+		pending:  make(map[string]*pendingSessionEntry),
 	}
+}
+
+// PreRegisterSession registers a pre-created multi-player session so that
+// incoming Play streams can join it by player ID. This is used in tests to
+// set up multi-player games without going through matchmaking.
+//
+// Each player in session.Config.PlayerIDs must call Play and identify itself
+// with the matching actor_id in the first message. Once all players have
+// connected, the runner starts automatically. The returned channel is closed
+// (and runErr set) when the session finishes.
+func (s *GameSessionServer) PreRegisterSession(session *engine.Session) chan struct{} {
+	entry := &pendingSessionEntry{
+		session:  session,
+		adapters: make(map[string]chan engine.PlayerAdapter),
+		runDone:  make(chan struct{}),
+	}
+	for _, pid := range session.Config.PlayerIDs {
+		entry.adapters[pid] = make(chan engine.PlayerAdapter, 1)
+	}
+	s.mu.Lock()
+	s.pending[session.Config.SessionID] = entry
+	s.mu.Unlock()
+	return entry.runDone
 }
 
 // Play implements the bidirectional streaming RPC. It receives the first
@@ -371,6 +408,10 @@ func newGameSessionServer(opts ServerOptions) *GameSessionServer {
 // For simplicity in this implementation, each stream = one player in a
 // dedicated single-player session (the matchmaking lobby is responsible for
 // pairing players before the Play stream is opened in a real deployment).
+//
+// If the actor_id in the first message matches a pre-registered session (via
+// [PreRegisterSession]), the stream is attached to that multi-player session
+// instead of creating a new single-player session.
 func (s *GameSessionServer) Play(stream grpc.BidiStreamingServer[pb.Action, pb.StateUpdate]) error {
 	ctx := stream.Context()
 
@@ -384,6 +425,66 @@ func (s *GameSessionServer) Play(stream grpc.BidiStreamingServer[pb.Action, pb.S
 		return status.Error(codes.InvalidArgument, "initial action must have actor_id set to player_id")
 	}
 
+	// ── Check for a pre-registered multi-player session ──────────────────
+	// The first message may carry a session_id in its payload as
+	// {"session_id":"<id>"} to join a pre-registered session. If found,
+	// register this stream as the player's adapter and block until the runner
+	// signals completion.
+	if firstMsg.GetPayload() != nil {
+		var joinMsg struct {
+			SessionID string `json:"session_id"`
+		}
+		if jsonErr := json.Unmarshal(firstMsg.GetPayload(), &joinMsg); jsonErr == nil && joinMsg.SessionID != "" {
+			s.mu.Lock()
+			entry, isPending := s.pending[joinMsg.SessionID]
+			s.mu.Unlock()
+
+			if isPending {
+				// Deliver this stream's adapter to the pending session.
+				adapterCh, playerInSession := entry.adapters[playerID]
+				if !playerInSession {
+					return status.Errorf(codes.InvalidArgument,
+						"player %q is not part of session %q", playerID, joinMsg.SessionID)
+				}
+				adapter := &streamPlayerAdapter{stream: stream, playerID: playerID}
+				adapterCh <- adapter
+
+				// Start the runner once all players have connected. runOnce
+				// ensures exactly one goroutine drives the runner regardless of
+				// how many streams arrive concurrently.
+				entry.runOnce.Do(func() {
+					go func() {
+						defer close(entry.runDone)
+						// Collect all adapters (one per player, in order).
+						players := make(map[string]engine.PlayerAdapter, len(entry.adapters))
+						for pid, ch := range entry.adapters {
+							select {
+							case a := <-ch:
+								players[pid] = a
+							case <-ctx.Done():
+								entry.runErr = ctx.Err()
+								return
+							}
+						}
+						runner := engine.NewRunner()
+						entry.runErr = runner.Run(context.Background(), entry.session, players)
+					}()
+				})
+
+				// Block this stream until the game finishes or the context ends.
+				select {
+				case <-entry.runDone:
+					// Game finished; send the terminal state to this player.
+					_ = stream.Send(&pb.StateUpdate{IsTerminal: true})
+					return entry.runErr
+				case <-ctx.Done():
+					return ctx.Err()
+				}
+			}
+		}
+	}
+
+	// ── Single-player session (default path) ─────────────────────────────
 	sessionID := fmt.Sprintf("%s-%d", playerID, time.Now().UnixNano())
 	gameType := s.sOpts.GameType
 	if gameType == "" {

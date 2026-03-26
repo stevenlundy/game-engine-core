@@ -1,19 +1,35 @@
 # game-engine-core
 
-A zero-knowledge game hosting chassis in Go. The server manages sessions,
-players, and replay logs without being recompiled for every new game type.
+The **Chassis** — a high-performance, language-agnostic foundation for game theory exploration and reinforcement learning. It provides a gRPC server, a standardised replay log (`.glog`), and reusable components (cards, grid, timing) so that any game can be plugged in by implementing a single Go interface.
 
 ---
 
-## Quick-Start
+## Quick Start
 
 ```bash
-git clone https://github.com/game-engine/game-engine-core.git
+# 1. Clone
+git clone https://github.com/game-engine/game-engine-core
 cd game-engine-core
-make proto   # regenerate *.pb.go from .proto files
-make build   # go build ./...
-make test    # go test ./...
+
+# 2. Regenerate protobuf (requires protoc + plugins — see below)
+make proto
+
+# 3. Build all binaries
+make build
+
+# 4. Run tests
+make test
 ```
+
+### Protobuf prerequisites
+
+| Tool | Install |
+|---|---|
+| `protoc` 34.x | `brew install protobuf` |
+| `protoc-gen-go` v1.36+ | `go install google.golang.org/protobuf/cmd/protoc-gen-go@latest` |
+| `protoc-gen-go-grpc` v1.6+ | `go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest` |
+
+Make sure `$(go env GOPATH)/bin` is on your `PATH`.
 
 ---
 
@@ -21,155 +37,132 @@ make test    # go test ./...
 
 ```
 game-engine-core/
-├── api/
-│   └── proto/             # .proto definitions (common, matchmaking, gamesession)
-│       └── gen/           # generated *.pb.go and *_grpc.pb.go files
+├── api/proto/             # .proto source files
+│   └── gen/               # Generated *.pb.go / *_grpc.pb.go (committed)
 ├── cmd/
-│   └── server/            # gRPC server entry point (Phase 7)
+│   ├── server/            # gRPC server binary entry point
+│   └── glogtool/          # CLI for inspecting .glog replay files
 ├── pkg/
-│   ├── engine/            # Runner, session model, replay log
-│   ├── components/
-│   │   ├── cards/         # Deck, shuffle, deal, hand masking
-│   │   ├── grid/          # 2D/3D grids, distance math, occupancy maps
-│   │   └── timing/        # TurnTimer, AI timeout enforcement
-│   └── transport/         # gRPC server & client boilerplate
-├── internal/              # Non-exported utilities (auth, TLS)
-├── tools/                 # Build-time tool dependencies
-├── go.mod
-├── go.sum
-├── Makefile
-└── README.md
+│   ├── engine/            # GameLogic interface, Runner, Session, ReplayLog
+│   └── components/
+│       ├── cards/         # Deck, shuffle, deal, hidden-state masking
+│       ├── grid/          # 2D/3D grids, distance math, occupancy maps
+│       └── timing/        # TurnTimer, 50 ms AI timeout constant
+├── internal/
+│   ├── auth/              # Token-based gRPC interceptor
+│   └── tls/               # TLS credential helpers
+└── examples/
+    └── minimal_game/      # Smallest possible GameLogic wired to the Runner
 ```
-
----
-
-## Protobuf Code Generation
-
-### Tool Versions
-
-| Tool               | Version   |
-|--------------------|-----------|
-| `protoc`           | 34.1      |
-| `protoc-gen-go`    | v1.36.11  |
-| `protoc-gen-go-grpc` | v1.6.1  |
-
-### Installing the Plugins
-
-```bash
-go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
-```
-
-Make sure `$(go env GOPATH)/bin` (typically `~/go/bin`) is on your `PATH`.
-
-### Running Generation
-
-```bash
-make proto
-```
-
-This runs:
-
-```bash
-protoc \
-  --proto_path=api/proto \
-  --go_out=api/proto/gen --go_opt=paths=source_relative \
-  --go-grpc_out=api/proto/gen --go-grpc_opt=paths=source_relative \
-  api/proto/common.proto \
-  api/proto/matchmaking.proto \
-  api/proto/gamesession.proto
-```
-
-The generated files (`*.pb.go`, `*_grpc.pb.go`) are placed in `api/proto/gen/`.
-They are excluded from version control via `.gitignore`; run `make proto` after
-cloning to regenerate them.
 
 ---
 
 ## Implementing a New Game
 
-> Full example: `examples/minimal_game/main.go` (Phase 8)
-
-Implement the `GameLogic` interface from `pkg/engine/`:
+Implement the `engine.GameLogic` interface (six methods) and pass it to the server:
 
 ```go
-type GameLogic interface {
-    GetInitialState(config JSON) (State, error)
-    ValidateAction(state State, action Action) error
-    ApplyAction(state State, action Action) (State, float64, error)
-    IsTerminal(state State) (TerminalResult, error)
-    GetRichState(state State) (interface{}, error)
-    GetTensorState(state State) ([]float32, error)
-}
+package mygame
+
+import "github.com/game-engine/game-engine-core/pkg/engine"
+
+type MyGame struct{}
+
+func (g *MyGame) GetInitialState(config engine.JSON) (engine.State, error)          { ... }
+func (g *MyGame) ValidateAction(s engine.State, a engine.Action) error              { ... }
+func (g *MyGame) ApplyAction(s engine.State, a engine.Action) (engine.State, float64, error) { ... }
+func (g *MyGame) IsTerminal(s engine.State) (engine.TerminalResult, error)          { ... }
+func (g *MyGame) GetRichState(s engine.State) (interface{}, error)                  { ... }
+func (g *MyGame) GetTensorState(s engine.State) ([]float32, error)                  { ... }
 ```
+
+See [`examples/minimal_game/main.go`](examples/minimal_game/main.go) for a runnable example.
 
 ---
 
 ## Running in Headless Mode
 
-Set the `HEADLESS=true` environment variable (or pass `RunModeHeadless` to
-`SessionConfig`) to suppress all slog output and enable GZIP-compressed replay
-logs. Use `BatchRunner` to run thousands of concurrent games.
+Headless mode suppresses all logging and writes GZIP-compressed `.glog` files — ideal for bulk simulation:
+
+```go
+import "github.com/game-engine/game-engine-core/pkg/engine"
+
+factory := func() engine.GameLogic { return &MyGame{} }
+br := engine.NewBatchRunner(8 /* parallelism */, factory)
+
+configs := []engine.SessionConfig{
+    {SessionID: "run-1", PlayerIDs: []string{"ai-a", "ai-b"}, Mode: engine.RunModeHeadless, LogDir: "./replays"},
+    // ...
+}
+
+results, err := br.RunAll(context.Background(), configs)
+```
 
 ---
 
 ## Parsing a `.glog` File
 
 ```go
-r, err := engine.OpenReplayLog("path/to/session.glog")
-if err != nil { /* handle */ }
+import "github.com/game-engine/game-engine-core/pkg/engine"
+
+r, err := engine.OpenReplayLog("session-123.glog") // auto-detects GZIP
+if err != nil { log.Fatal(err) }
 defer r.Close()
 
-meta, err := r.ReadMetadata()
+meta, _ := r.ReadMetadata()
+fmt.Println("session:", meta.SessionID, "players:", meta.PlayerIDs)
+
 for {
     entry, err := r.Next()
     if err == io.EOF { break }
-    // process entry ...
+    fmt.Printf("step %d actor=%s reward=%.2f terminal=%v\n",
+        entry.StepIndex, entry.ActorID, entry.RewardDelta, entry.IsTerminal)
 }
 ```
 
-The reader auto-detects GZIP-compressed files.
-
----
-
-## Replay Log Compression Ratio
-
-On a representative 1,000-step session with typical JSON action and state payloads
-(~300 bytes per entry), GZIP compression (level `BestSpeed`) achieves the following:
-
-| Mode     | File size  | Notes                         |
-|----------|-----------|-------------------------------|
-| Plain    | ~298 KB   | `RunModeLive`                 |
-| GZIP     | ~5 KB     | `RunModeHeadless` (BestSpeed) |
-
-**~58× compression ratio** — highly repetitive JSON structure compresses extremely
-well. This makes GZIP mandatory for headless training runs where millions of sessions
-produce terabytes of data.
-
-### Benchmark Results (Apple M1 Pro, go 1.26)
-
-```
-BenchmarkReplayLog_Plain-10   150   21.8 ms/op   459 KB/s   10,000 entries/op
-BenchmarkReplayLog_GZIP-10    152   24.0 ms/op   416 KB/s   10,000 entries/op
-```
-
-GZIP adds ~10% write overhead while reducing on-disk size by 98%.
-
----
-
-## glogtool CLI
-
-The `cmd/glogtool` binary provides two subcommands for inspecting `.glog` files:
+Or use the CLI tool:
 
 ```bash
-# Build
-go build ./cmd/glogtool
+# Inspect metadata
+./glogtool inspect session-123.glog
 
-# Print session metadata
-glogtool inspect path/to/session.glog
-
-# Pretty-print all step entries
-glogtool dump path/to/session.glog
+# Pretty-print all entries
+./glogtool dump session-123.glog
 ```
 
-Both subcommands auto-detect GZIP compression.
+---
+
+## TLS / Auth
+
+### Generating a self-signed certificate for local development
+
+```bash
+openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem \
+  -days 365 -nodes -subj '/CN=localhost'
+```
+
+Then start the server with:
+
+```bash
+TLS_CERT=cert.pem TLS_KEY=key.pem PORT=50051 ./server
+```
+
+### Token auth
+
+Set `AUTH_TOKEN` on the server. Clients must include the token in gRPC metadata:
+
+```
+authorization: bearer <token>
+```
+
+---
+
+## Protobuf Tool Versions
+
+| Tool | Version used |
+|---|---|
+| `protoc` | 34.1 |
+| `protoc-gen-go` | v1.36.11 |
+| `protoc-gen-go-grpc` | v1.6.1 |
+
+Regenerate with `make proto`.

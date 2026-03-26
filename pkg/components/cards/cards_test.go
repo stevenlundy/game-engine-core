@@ -298,3 +298,120 @@ func TestMaskFor_EmptyHand(t *testing.T) {
 		t.Errorf("expected 0 cards, got %d", len(masked.Cards))
 	}
 }
+
+// ---- Edge-case tests --------------------------------------------------------
+
+func TestDeal_ZeroCards(t *testing.T) {
+	d := NewDeck(standardDeck())
+	cards, err := d.Deal(0)
+	if err != nil {
+		t.Fatalf("Deal(0) unexpected error: %v", err)
+	}
+	if len(cards) != 0 {
+		t.Errorf("Deal(0) expected 0 cards, got %d", len(cards))
+	}
+	if d.Size() != 52 {
+		t.Errorf("deck size should not change after Deal(0), got %d", d.Size())
+	}
+}
+
+func TestDeal_EmptyDeck(t *testing.T) {
+	d := NewDeck(nil)
+	_, err := d.Deal(1)
+	if !errors.Is(err, ErrInsufficientCards) {
+		t.Fatalf("expected ErrInsufficientCards dealing from empty deck, got %v", err)
+	}
+}
+
+func TestDeck_ResetAfterDeal(t *testing.T) {
+	d := NewDeck(standardDeck())
+	_, _ = d.Deal(10)
+	d.Reset()
+	if d.Size() != 52 {
+		t.Errorf("after Reset size should be 52, got %d", d.Size())
+	}
+}
+
+func TestDeck_ShuffleEmptyDeck(t *testing.T) {
+	d := NewDeck(nil)
+	// Should not panic on empty deck.
+	d.Shuffle(rand.New(rand.NewSource(1)))
+	if d.Size() != 0 {
+		t.Errorf("size should remain 0 after shuffling empty deck, got %d", d.Size())
+	}
+}
+
+func TestDeck_ShuffleSingleCard(t *testing.T) {
+	d := NewDeck([]Card{{Suit: "hearts", Rank: "A", ID: "A"}})
+	d.Shuffle(rand.New(rand.NewSource(1)))
+	if d.Size() != 1 {
+		t.Errorf("size should remain 1 after shuffling single card deck, got %d", d.Size())
+	}
+}
+
+func TestDealTo_SingleHand(t *testing.T) {
+	d := NewDeck(standardDeck())
+	h := &Hand{OwnerID: "solo"}
+	if err := d.DealTo([]*Hand{h}, 5); err != nil {
+		t.Fatalf("DealTo single hand: %v", err)
+	}
+	if len(h.Cards) != 5 {
+		t.Errorf("expected 5 cards, got %d", len(h.Cards))
+	}
+}
+
+func TestDealTo_ZeroCards(t *testing.T) {
+	d := NewDeck(standardDeck())
+	h := &Hand{OwnerID: "p"}
+	if err := d.DealTo([]*Hand{h}, 0); err != nil {
+		t.Fatalf("DealTo(0) unexpected error: %v", err)
+	}
+	if len(h.Cards) != 0 {
+		t.Errorf("expected 0 cards dealt, got %d", len(h.Cards))
+	}
+}
+
+func TestHand_RemoveFromMiddle(t *testing.T) {
+	h := &Hand{OwnerID: "player"}
+	h.Add(
+		Card{ID: "a"},
+		Card{ID: "b"},
+		Card{ID: "c"},
+	)
+	removed, err := h.Remove("b")
+	if err != nil {
+		t.Fatalf("Remove: %v", err)
+	}
+	if removed.ID != "b" {
+		t.Errorf("removed card ID = %q, want %q", removed.ID, "b")
+	}
+	if len(h.Cards) != 2 {
+		t.Errorf("expected 2 cards remaining, got %d", len(h.Cards))
+	}
+	if h.Cards[0].ID != "a" || h.Cards[1].ID != "c" {
+		t.Errorf("remaining cards = [%s, %s], want [a, c]", h.Cards[0].ID, h.Cards[1].ID)
+	}
+}
+
+func TestNewDeck_IndependentCopy(t *testing.T) {
+	// Verify that mutating the original slice does not affect the deck.
+	orig := standardDeck()
+	d := NewDeck(orig)
+	orig[0].Suit = "MUTATED"
+	if d.cards[0].Suit == "MUTATED" {
+		t.Error("NewDeck should copy the slice — mutation of original must not affect deck")
+	}
+}
+
+// ---- Benchmarks -------------------------------------------------------------
+
+// BenchmarkShuffle measures Fisher-Yates shuffle performance on a 52-card deck.
+func BenchmarkShuffle(b *testing.B) {
+	d := NewDeck(standardDeck())
+	rng := rand.New(rand.NewSource(42))
+	b.ResetTimer()
+	for range b.N {
+		d.Reset()
+		d.Shuffle(rng)
+	}
+}
