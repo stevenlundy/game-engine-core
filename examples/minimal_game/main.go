@@ -29,7 +29,7 @@ type countdownState struct {
 func (g *CountdownGame) GetInitialState(_ engine.JSON) (engine.State, error) {
 	payload, err := json.Marshal(countdownState{Counter: g.StartFrom})
 	if err != nil {
-		return engine.State{}, err
+		return engine.State{}, fmt.Errorf("countdownGame: marshal initial state: %w", err)
 	}
 	return engine.State{GameID: "countdown", Payload: payload}, nil
 }
@@ -41,12 +41,12 @@ func (g *CountdownGame) ValidateAction(_ engine.State, _ engine.Action) error {
 func (g *CountdownGame) ApplyAction(s engine.State, a engine.Action) (engine.State, float64, error) {
 	var cs countdownState
 	if err := json.Unmarshal(s.Payload, &cs); err != nil {
-		return s, 0, err
+		return s, 0, fmt.Errorf("countdownGame: unmarshal state: %w", err)
 	}
 	cs.Counter--
 	payload, err := json.Marshal(cs)
 	if err != nil {
-		return s, 0, err
+		return s, 0, fmt.Errorf("countdownGame: marshal state: %w", err)
 	}
 	s.Payload = payload
 	s.StepIndex++
@@ -56,7 +56,7 @@ func (g *CountdownGame) ApplyAction(s engine.State, a engine.Action) (engine.Sta
 func (g *CountdownGame) IsTerminal(s engine.State) (engine.TerminalResult, error) {
 	var cs countdownState
 	if err := json.Unmarshal(s.Payload, &cs); err != nil {
-		return engine.TerminalResult{}, err
+		return engine.TerminalResult{}, fmt.Errorf("countdownGame: unmarshal state: %w", err)
 	}
 	if cs.Counter <= 0 {
 		return engine.TerminalResult{IsOver: true, WinnerID: "player1"}, nil
@@ -66,13 +66,16 @@ func (g *CountdownGame) IsTerminal(s engine.State) (engine.TerminalResult, error
 
 func (g *CountdownGame) GetRichState(s engine.State) (interface{}, error) {
 	var cs countdownState
-	return cs, json.Unmarshal(s.Payload, &cs)
+	if err := json.Unmarshal(s.Payload, &cs); err != nil {
+		return nil, fmt.Errorf("countdownGame: unmarshal rich state: %w", err)
+	}
+	return cs, nil
 }
 
 func (g *CountdownGame) GetTensorState(s engine.State) ([]float32, error) {
 	var cs countdownState
 	if err := json.Unmarshal(s.Payload, &cs); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("countdownGame: unmarshal tensor state: %w", err)
 	}
 	return []float32{float32(cs.Counter)}, nil
 }

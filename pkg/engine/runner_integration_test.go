@@ -92,7 +92,7 @@ func (g *countdownGame) IsTerminal(state State) (TerminalResult, error) {
 func (g *countdownGame) GetRichState(state State) (interface{}, error) {
 	var cs countdownState
 	if err := json.Unmarshal(state.Payload, &cs); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("countdownGame: unmarshal state: %w", err)
 	}
 	return cs, nil
 }
@@ -100,7 +100,7 @@ func (g *countdownGame) GetRichState(state State) (interface{}, error) {
 func (g *countdownGame) GetTensorState(state State) ([]float32, error) {
 	var cs countdownState
 	if err := json.Unmarshal(state.Payload, &cs); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("countdownGame: unmarshal state: %w", err)
 	}
 	return []float32{float32(cs.Remaining)}, nil
 }
@@ -163,7 +163,7 @@ func TestRunner_LiveMode_TwoRandomPlayers_ProducesValidGlog(t *testing.T) {
 	if err != nil {
 		t.Fatalf("OpenReplayLog: %v", err)
 	}
-	defer rr.Close()
+	defer func() { _ = rr.Close() }()
 
 	meta, err := rr.ReadMetadata()
 	if err != nil {
@@ -238,7 +238,7 @@ func TestRunner_HeadlessMode_ProducesGZIPGlog(t *testing.T) {
 	if err != nil {
 		t.Fatalf("OpenReplayLog: %v", err)
 	}
-	defer rr.Close()
+	defer func() { _ = rr.Close() }()
 
 	meta, err := rr.ReadMetadata()
 	if err != nil {

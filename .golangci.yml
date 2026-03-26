@@ -1,21 +1,35 @@
+version: "2"
+
+linters:
+  default: none
+  enable:
+    - errcheck
+    - govet
+    - staticcheck
+    - exhaustive
+    - wrapcheck
+    - unparam
+
+formatters:
+  enable:
+    - gofmt
+  settings:
+    gofmt:
+      simplify: true
+
 linters-settings:
   errcheck:
     check-type-assertions: true
     check-blank: true
   govet:
     enable-all: true
-  gofmt:
-    simplify: true
+    settings:
+      shadow:
+        strict: true
   staticcheck:
     checks: ["all"]
-
-linters:
-  disable-all: true
-  enable:
-    - errcheck
-    - govet
-    - staticcheck
-    - gofmt
+  exhaustive:
+    default-signifies-exhaustive: true
 
 run:
   timeout: 5m
@@ -23,7 +37,22 @@ run:
 
 issues:
   exclude-rules:
-    # Ignore errors in test helper files
+    # Defer close in tests: ignoring the error is idiomatic Go.
     - path: "_test\\.go"
       linters:
         - errcheck
+      text: "Error return value of .*(Close|RemoveAll).*is not checked"
+    # unparam is noisy on interface implementations where the signature is fixed.
+    - linters:
+        - unparam
+      text: "always receives"
+    # pkg/transport/server.go returns gRPC status.Error/Errorf and ctx.Err()
+    # directly — these are already typed error values that callers inspect
+    # with status.Code() or errors.Is(). Wrapping would obscure the gRPC code.
+    - path: "pkg/transport/server\\.go"
+      linters:
+        - wrapcheck
+    # internal/auth returns gRPC status.Error — same rationale as server.go.
+    - path: "internal/auth/auth\\.go"
+      linters:
+        - wrapcheck

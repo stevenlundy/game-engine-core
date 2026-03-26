@@ -149,9 +149,9 @@ func (l *lobby) drain() {
 type MatchmakingServer struct {
 	pb.UnimplementedMatchmakingServer
 
-	opts   ServerOptions
-	log    *slog.Logger
-	mu     sync.Mutex
+	opts ServerOptions
+	log  *slog.Logger
+	mu   sync.Mutex
 	// lobbies maps gameType → *lobby
 	lobbies map[string]*lobby
 }
@@ -182,7 +182,7 @@ func (s *MatchmakingServer) getOrCreateLobby(gameType string) *lobby {
 // disconnects).
 func (s *MatchmakingServer) JoinLobby(req *pb.JoinRequest, stream grpc.ServerStreamingServer[pb.LobbyStatusUpdate]) error {
 	if req.GetPlayerId() == "" {
-		return status.Error(codes.InvalidArgument, "player_id must not be empty")
+		return status.Error(codes.InvalidArgument, "player_id must not be empty") //nolint:wrapcheck // gRPC status is already a typed error
 	}
 	gameType := req.GetGameType()
 	if gameType == "" {
@@ -220,14 +220,14 @@ func (s *MatchmakingServer) JoinLobby(req *pb.JoinRequest, stream grpc.ServerStr
 				return nil
 			}
 			if err := stream.Send(u); err != nil {
-				return err
+				return err //nolint:wrapcheck // gRPC stream.Send pass-through
 			}
 			if u.GetGameStarting() {
 				return nil
 			}
 		case <-ctx.Done():
 			l.remove(req.GetPlayerId())
-			return ctx.Err()
+			return ctx.Err() //nolint:wrapcheck // ctx.Err() returns sentinels; wrapping breaks errors.Is
 		}
 	}
 }
@@ -235,7 +235,7 @@ func (s *MatchmakingServer) JoinLobby(req *pb.JoinRequest, stream grpc.ServerStr
 // CancelJoin removes the player from the pending lobby.
 func (s *MatchmakingServer) CancelJoin(ctx context.Context, req *pb.JoinRequest) (*pb.JoinResponse, error) {
 	if req.GetPlayerId() == "" {
-		return nil, status.Error(codes.InvalidArgument, "player_id must not be empty")
+		return nil, status.Error(codes.InvalidArgument, "player_id must not be empty") //nolint:wrapcheck // gRPC status is already a typed error
 	}
 	gameType := req.GetGameType()
 	if gameType == "" {
@@ -317,7 +317,7 @@ func (a *streamPlayerAdapter) RequestAction(ctx context.Context, update engine.S
 
 	select {
 	case <-ctx.Done():
-		return engine.Action{}, ctx.Err()
+		return engine.Action{}, ctx.Err() //nolint:wrapcheck // ctx.Err() returns sentinels; wrapping breaks errors.Is
 	case r := <-recvCh:
 		if r.err != nil {
 			if r.err == io.EOF {
@@ -340,11 +340,11 @@ func (a *streamPlayerAdapter) RequestAction(ctx context.Context, update engine.S
 // pendingSessionEntry holds a pre-registered multi-player session waiting for
 // all its player streams to connect. Used by [GameSessionServer.PreRegisterSession].
 type pendingSessionEntry struct {
-	session    *engine.Session
-	adapters   map[string]chan engine.PlayerAdapter // playerID → channel for stream adapter
-	runOnce    sync.Once
-	runDone    chan struct{} // closed when runner exits
-	runErr     error
+	session  *engine.Session
+	adapters map[string]chan engine.PlayerAdapter // playerID → channel for stream adapter
+	runOnce  sync.Once
+	runDone  chan struct{} // closed when runner exits
+	runErr   error
 }
 
 // GameSessionServer implements [pb.GameSessionServer]. It bridges the gRPC
@@ -422,7 +422,7 @@ func (s *GameSessionServer) Play(stream grpc.BidiStreamingServer[pb.Action, pb.S
 	}
 	playerID := firstMsg.GetActorId()
 	if playerID == "" {
-		return status.Error(codes.InvalidArgument, "initial action must have actor_id set to player_id")
+		return status.Error(codes.InvalidArgument, "initial action must have actor_id set to player_id") //nolint:wrapcheck // gRPC status is already a typed error
 	}
 
 	// ── Check for a pre-registered multi-player session ──────────────────
@@ -478,7 +478,7 @@ func (s *GameSessionServer) Play(stream grpc.BidiStreamingServer[pb.Action, pb.S
 					_ = stream.Send(&pb.StateUpdate{IsTerminal: true})
 					return entry.runErr
 				case <-ctx.Done():
-					return ctx.Err()
+					return ctx.Err() //nolint:wrapcheck // ctx.Err() returns sentinels; wrapping breaks errors.Is
 				}
 			}
 		}
@@ -577,7 +577,7 @@ func (s *GameSessionServer) Play(stream grpc.BidiStreamingServer[pb.Action, pb.S
 func (s *GameSessionServer) GetReplay(req *pb.GetReplayRequest, stream grpc.ServerStreamingServer[pb.ReplayEntry]) error {
 	sessionID := req.GetSessionId()
 	if sessionID == "" {
-		return status.Error(codes.InvalidArgument, "session_id must not be empty")
+		return status.Error(codes.InvalidArgument, "session_id must not be empty") //nolint:wrapcheck // gRPC status is already a typed error
 	}
 
 	logPath := filepath.Join(s.sOpts.LogDir, sessionID+".glog")
@@ -586,7 +586,7 @@ func (s *GameSessionServer) GetReplay(req *pb.GetReplayRequest, stream grpc.Serv
 	if err != nil {
 		return status.Errorf(codes.NotFound, "replay not found for session %q: %v", sessionID, err)
 	}
-	defer reader.Close()
+	defer func() { _ = reader.Close() }()
 
 	// Skip the metadata record.
 	if _, err := reader.ReadMetadata(); err != nil {
@@ -597,7 +597,7 @@ func (s *GameSessionServer) GetReplay(req *pb.GetReplayRequest, stream grpc.Serv
 	for {
 		select {
 		case <-ctx.Done():
-			return ctx.Err()
+			return ctx.Err() //nolint:wrapcheck // ctx.Err() returns sentinels; wrapping breaks errors.Is
 		default:
 		}
 
@@ -618,7 +618,7 @@ func (s *GameSessionServer) GetReplay(req *pb.GetReplayRequest, stream grpc.Serv
 			IsTerminal:    entry.IsTerminal,
 		}
 		if err := stream.Send(pbEntry); err != nil {
-			return err
+			return err //nolint:wrapcheck // gRPC stream.Send pass-through
 		}
 	}
 }
@@ -685,7 +685,7 @@ func StreamLoggingInterceptor(log *slog.Logger) grpc.StreamServerInterceptor {
 			slog.Duration("duration", time.Since(start)),
 			slog.String("code", code.String()),
 		)
-		return err
+		return err //nolint:wrapcheck // interceptor pass-through
 	}
 }
 

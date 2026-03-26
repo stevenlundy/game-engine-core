@@ -20,7 +20,7 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		panic("failed to create temp dir: " + err.Error())
 	}
-	defer os.RemoveAll(tmp)
+	defer func() { _ = os.RemoveAll(tmp) }()
 
 	bin := filepath.Join(tmp, "glogtool")
 	out, err := exec.Command("go", "build", "-o", bin, ".").CombinedOutput()

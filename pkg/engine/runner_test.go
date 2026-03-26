@@ -232,8 +232,8 @@ func (e *errLogicGame) IsTerminal(_ State) (TerminalResult, error) {
 	}
 	return TerminalResult{IsOver: true}, nil
 }
-func (e *errLogicGame) GetRichState(_ State) (interface{}, error)  { return nil, nil }
-func (e *errLogicGame) GetTensorState(_ State) ([]float32, error)  { return nil, nil }
+func (e *errLogicGame) GetRichState(_ State) (interface{}, error) { return nil, nil }
+func (e *errLogicGame) GetTensorState(_ State) ([]float32, error) { return nil, nil }
 
 // TestRunner_IsTerminalError verifies that an error from IsTerminal propagates.
 func TestRunner_IsTerminalError(t *testing.T) {
@@ -288,8 +288,8 @@ func (a *applyErrGame) ApplyAction(_ State, _ Action) (State, float64, error) {
 func (a *applyErrGame) IsTerminal(_ State) (TerminalResult, error) {
 	return TerminalResult{IsOver: false}, nil // never terminal so Run tries to ApplyAction
 }
-func (a *applyErrGame) GetRichState(_ State) (interface{}, error)  { return nil, nil }
-func (a *applyErrGame) GetTensorState(_ State) ([]float32, error)  { return nil, nil }
+func (a *applyErrGame) GetRichState(_ State) (interface{}, error) { return nil, nil }
+func (a *applyErrGame) GetTensorState(_ State) ([]float32, error) { return nil, nil }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Replay log integration

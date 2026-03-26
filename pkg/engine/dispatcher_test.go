@@ -53,8 +53,8 @@ func (g *stubTerminalGame) IsTerminal(state State) (TerminalResult, error) {
 	return TerminalResult{}, nil
 }
 
-func (g *stubTerminalGame) GetRichState(_ State) (interface{}, error)  { return nil, nil }
-func (g *stubTerminalGame) GetTensorState(_ State) ([]float32, error)  { return nil, nil }
+func (g *stubTerminalGame) GetRichState(_ State) (interface{}, error) { return nil, nil }
+func (g *stubTerminalGame) GetTensorState(_ State) ([]float32, error) { return nil, nil }
 
 // slowAdapter is a PlayerAdapter that sleeps for d before returning.
 type slowAdapter struct {
@@ -68,7 +68,7 @@ func (s *slowAdapter) RequestAction(ctx context.Context, update StateUpdate) (Ac
 	case <-time.After(s.delay):
 		return Action{ActorID: update.ActorID, Payload: json.RawMessage("null")}, nil
 	case <-ctx.Done():
-		return Action{}, ctx.Err()
+		return Action{}, ctx.Err() //nolint:wrapcheck // ctx.Err() returns sentinels; wrapping breaks errors.Is
 	}
 }
 

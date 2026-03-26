@@ -11,6 +11,10 @@ build:
 test:
 	$(GO) test ./...
 
+## test-race: run all tests with the race detector enabled
+test-race:
+	$(GO) test -race ./...
+
 ## lint: run golangci-lint (must be installed separately)
 lint:
 	golangci-lint run ./...

@@ -52,4 +52,27 @@ brew install golangci-lint
 make lint
 ```
 
-The project enforces `errcheck`, `govet`, `staticcheck`, and `gofmt`. Fix all reported issues before opening a PR.
+The project enforces `errcheck`, `govet` (with `shadow`), `staticcheck`, `exhaustive`, `wrapcheck`, and `unparam`. Fix all reported issues before opening a PR.
+
+---
+
+## Dev Tooling Setup
+
+After cloning, run this once to enable the pre-commit hook:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+The hook runs on every `git commit`:
+1. **`gofmt`** — fails if any staged `.go` files are unformatted
+2. **`go vet`** — fails on suspicious constructs
+3. **`golangci-lint`** — runs the full linter suite (skipped gracefully if not installed)
+
+### Race Detector
+
+The CI pipeline runs tests with `-race`. Run it locally before pushing:
+
+```bash
+make test-race
+```

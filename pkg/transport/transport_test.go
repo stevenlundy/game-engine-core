@@ -52,8 +52,8 @@ func (c *countdownLogic) IsTerminal(s engine.State) (engine.TerminalResult, erro
 	return engine.TerminalResult{}, nil
 }
 
-func (c *countdownLogic) GetRichState(s engine.State) (interface{}, error)   { return s, nil }
-func (c *countdownLogic) GetTensorState(_ engine.State) ([]float32, error)   { return []float32{0}, nil }
+func (c *countdownLogic) GetRichState(s engine.State) (interface{}, error) { return s, nil }
+func (c *countdownLogic) GetTensorState(_ engine.State) ([]float32, error) { return []float32{0}, nil }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Test helpers
@@ -71,7 +71,7 @@ func newTestServer(t *testing.T, logic engine.GameLogic, maxPlayers int) (*bufco
 	go func() { _ = srv.Serve(lis) }()
 	return lis, func() {
 		srv.GracefulStop()
-		lis.Close()
+		_ = lis.Close()
 	}
 }
 
@@ -87,7 +87,7 @@ func newTestConn(t *testing.T, lis *bufconn.Listener) *grpc.ClientConn {
 	if err != nil {
 		t.Fatalf("grpc.NewClient: %v", err)
 	}
-	t.Cleanup(func() { conn.Close() })
+	t.Cleanup(func() { _ = conn.Close() })
 	return conn
 }
 
@@ -222,7 +222,7 @@ func TestGetReplay(t *testing.T) {
 	go func() { _ = srv.Serve(lis) }()
 	defer func() {
 		srv.GracefulStop()
-		lis.Close()
+		_ = lis.Close()
 	}()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)

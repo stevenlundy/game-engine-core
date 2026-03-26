@@ -57,7 +57,7 @@ Usage:
 func cmdInspect(path string) error {
 	rr, err := engine.OpenReplayLog(path)
 	if err != nil {
-		return err
+		return fmt.Errorf("open replay log: %w", err)
 	}
 	defer func() { _ = rr.Close() }()
 
@@ -79,7 +79,7 @@ func cmdInspect(path string) error {
 func cmdDump(path string) error {
 	rr, err := engine.OpenReplayLog(path)
 	if err != nil {
-		return err
+		return fmt.Errorf("open replay log: %w", err)
 	}
 	defer func() { _ = rr.Close() }()
 

@@ -54,7 +54,7 @@ func NewTokenInterceptor(token string) *TokenInterceptor {
 func (t *TokenInterceptor) validate(ctx context.Context) error {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
-		return status.Error(codes.Unauthenticated, "missing metadata")
+		return status.Error(codes.Unauthenticated, "missing metadata") //nolint:wrapcheck // gRPC status is already a typed error
 	}
 
 	values := md.Get(MetadataKey)
@@ -70,7 +70,7 @@ func (t *TokenInterceptor) validate(ctx context.Context) error {
 
 	provided := raw[len(bearerPrefix):]
 	if provided != t.token {
-		return status.Error(codes.Unauthenticated, "invalid token")
+		return status.Error(codes.Unauthenticated, "invalid token") //nolint:wrapcheck // gRPC status is already a typed error
 	}
 
 	return nil

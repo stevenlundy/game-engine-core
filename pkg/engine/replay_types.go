@@ -3,6 +3,7 @@ package engine
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 )
 
 // SessionMetadataEntry is the header record written as the very first line of
@@ -120,7 +121,7 @@ func (r ReplayRecord) Entry() (ReplayEntry, bool) {
 
 // wireRecord is the canonical on-wire shape used by MarshalJSON / UnmarshalJSON.
 type wireRecord struct {
-	Type     string               `json:"type"`
+	Type     string                `json:"type"`
 	Metadata *SessionMetadataEntry `json:"metadata,omitempty"`
 	Entry    *ReplayEntry          `json:"entry,omitempty"`
 }
@@ -129,9 +130,17 @@ type wireRecord struct {
 func (r ReplayRecord) MarshalJSON() ([]byte, error) {
 	switch r.Type {
 	case RecordTypeMetadata:
-		return json.Marshal(wireRecord{Type: r.Type, Metadata: r.rawMetadata})
+		out, err := json.Marshal(wireRecord{Type: r.Type, Metadata: r.rawMetadata})
+		if err != nil {
+			return nil, fmt.Errorf("engine: marshal metadata record: %w", err)
+		}
+		return out, nil
 	case RecordTypeStep:
-		return json.Marshal(wireRecord{Type: r.Type, Entry: r.rawEntry})
+		out, err := json.Marshal(wireRecord{Type: r.Type, Entry: r.rawEntry})
+		if err != nil {
+			return nil, fmt.Errorf("engine: marshal step record: %w", err)
+		}
+		return out, nil
 	default:
 		return nil, errors.New("engine: ReplayRecord has unknown type: " + r.Type)
 	}
@@ -141,7 +150,7 @@ func (r ReplayRecord) MarshalJSON() ([]byte, error) {
 func (r *ReplayRecord) UnmarshalJSON(data []byte) error {
 	var w wireRecord
 	if err := json.Unmarshal(data, &w); err != nil {
-		return err
+		return fmt.Errorf("engine: unmarshal replay record: %w", err)
 	}
 	r.Type = w.Type
 	switch w.Type {

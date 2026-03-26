@@ -74,7 +74,7 @@ func (r *Runner) Run(ctx context.Context, session *Session, players map[string]P
 		// ── 0. Check for context cancellation ───────────────────────────
 		select {
 		case <-ctx.Done():
-			return ctx.Err()
+			return ctx.Err() //nolint:wrapcheck // ctx.Err() returns sentinels; wrapping breaks errors.Is
 		default:
 		}
 
@@ -88,16 +88,16 @@ func (r *Runner) Run(ctx context.Context, session *Session, players map[string]P
 			session.winnerID = result.WinnerID
 
 			// Write the terminal replay entry.
-			if err := writeReplayEntry(session, Action{}, 0, true); err != nil {
-				return err
+			if writeErr := writeReplayEntry(session, Action{}, 0, true); writeErr != nil {
+				return writeErr
 			}
 			// Flush and close the log.
 			if session.Log != nil {
-				if err := session.Log.Flush(); err != nil {
-					logger.Error("replay log flush failed", slog.String("session_id", session.Config.SessionID), slog.Any("error", err))
+				if flushErr := session.Log.Flush(); flushErr != nil {
+					logger.Error("replay log flush failed", slog.String("session_id", session.Config.SessionID), slog.Any("error", flushErr))
 				}
-				if err := session.Log.Close(); err != nil {
-					logger.Error("replay log close failed", slog.String("session_id", session.Config.SessionID), slog.Any("error", err))
+				if closeErr := session.Log.Close(); closeErr != nil {
+					logger.Error("replay log close failed", slog.String("session_id", session.Config.SessionID), slog.Any("error", closeErr))
 				}
 			}
 			logger.Info("game over",
@@ -132,7 +132,7 @@ func (r *Runner) Run(ctx context.Context, session *Session, players map[string]P
 		if err != nil {
 			if ctx.Err() != nil {
 				// Parent context was cancelled — propagate cleanly.
-				return ctx.Err()
+				return ctx.Err() //nolint:wrapcheck // ctx.Err() returns sentinels; wrapping breaks errors.Is
 			}
 			// Handle a disconnected / erroring adapter: forfeit in Live mode,
 			// use fallback in Headless mode.

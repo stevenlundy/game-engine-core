@@ -50,7 +50,7 @@ type CountdownGame struct {
 func (g *CountdownGame) GetInitialState(_ engine.JSON) (engine.State, error) {
 	payload, err := json.Marshal(countdownState{Step: 0})
 	if err != nil {
-		return engine.State{}, err
+		return engine.State{}, fmt.Errorf("countdownGame: marshal initial state: %w", err)
 	}
 	return engine.State{GameID: "countdown", Payload: payload}, nil
 }
@@ -87,13 +87,16 @@ func (g *CountdownGame) IsTerminal(s engine.State) (engine.TerminalResult, error
 
 func (g *CountdownGame) GetRichState(s engine.State) (interface{}, error) {
 	var cs countdownState
-	return cs, json.Unmarshal(s.Payload, &cs)
+	if err := json.Unmarshal(s.Payload, &cs); err != nil {
+		return nil, fmt.Errorf("countdownGame: unmarshal rich state: %w", err)
+	}
+	return cs, nil
 }
 
 func (g *CountdownGame) GetTensorState(s engine.State) ([]float32, error) {
 	var cs countdownState
 	if err := json.Unmarshal(s.Payload, &cs); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("countdownGame: unmarshal tensor state: %w", err)
 	}
 	return []float32{float32(cs.Step), float32(g.MaxSteps)}, nil
 }

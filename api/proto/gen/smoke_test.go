@@ -63,9 +63,9 @@ func TestInstantiateCommonMessages(t *testing.T) {
 func TestInstantiateMatchmakingMessages(t *testing.T) {
 	t.Run("JoinRequest", func(t *testing.T) {
 		msg := &enginepb.JoinRequest{
-			PlayerId:  "player-1",
-			GameType:  "chess",
-			Config:    []byte(`{"time_control":"blitz"}`),
+			PlayerId: "player-1",
+			GameType: "chess",
+			Config:   []byte(`{"time_control":"blitz"}`),
 		}
 		roundTrip(t, msg)
 	})

@@ -172,9 +172,9 @@ func (t *TimeoutAdapter) RequestAction(ctx context.Context, update StateUpdate) 
 		// Timer fired: inner was too slow.
 	case <-ctx.Done():
 		// Parent context cancelled: propagate cancellation.
-		return Action{}, ctx.Err()
+		return Action{}, ctx.Err() //nolint:wrapcheck // ctx.Err() returns sentinels; wrapping breaks errors.Is
 	}
 
 	// Invoke the fallback using the parent context (not the expired inner ctx).
-	return t.fallback.RequestAction(ctx, update)
+	return t.fallback.RequestAction(ctx, update) //nolint:wrapcheck // interface pass-through: caller owns the error
 }

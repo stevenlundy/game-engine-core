@@ -50,7 +50,7 @@ type bidiPlayStream struct {
 
 // Send converts an [engine.Action] to a proto [pb.Action] and sends it.
 func (b *bidiPlayStream) Send(action engine.Action) error {
-	return b.stream.Send(&pb.Action{
+	return b.stream.Send(&pb.Action{ //nolint:wrapcheck // gRPC stream pass-through
 		ActorId:     action.ActorID,
 		Payload:     action.Payload,
 		TimestampMs: action.TimestampMs,
@@ -59,14 +59,14 @@ func (b *bidiPlayStream) Send(action engine.Action) error {
 
 // Close half-closes the send direction of the stream.
 func (b *bidiPlayStream) Close() error {
-	return b.stream.CloseSend()
+	return b.stream.CloseSend() //nolint:wrapcheck // gRPC stream pass-through
 }
 
 // Recv blocks for the next state update from the server.
 func (b *bidiPlayStream) Recv() (engine.StateUpdate, error) {
 	msg, err := b.stream.Recv()
 	if err != nil {
-		return engine.StateUpdate{}, err
+		return engine.StateUpdate{}, err //nolint:wrapcheck // gRPC stream pass-through
 	}
 	var st engine.State
 	if s := msg.GetState(); s != nil {
