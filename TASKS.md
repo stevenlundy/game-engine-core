@@ -11,32 +11,32 @@
 **Goal:** A clean, compilable repository skeleton that every later phase can build into.
 
 ### 1.1 Module & Toolchain
-- [ ] Run `go mod init github.com/game-engine/game-engine-core` and commit `go.mod`
-- [ ] Pin Go toolchain version in `go.mod` (`go 1.22` or later) and add a `.tool-versions` / `.go-version` file
-- [ ] Create `go.sum` by running an initial `go mod tidy`
-- [ ] Add a root `Makefile` with targets: `build`, `test`, `lint`, `proto`, `clean`
-- [ ] Add a `.gitignore` covering Go binaries, `*.pb.go` generated files, `*.glog`, and IDE folders
+- [x] Run `go mod init github.com/game-engine/game-engine-core` and commit `go.mod`
+- [x] Pin Go toolchain version in `go.mod` (`go 1.22` or later) and add a `.tool-versions` / `.go-version` file
+- [x] Create `go.sum` by running an initial `go mod tidy`
+- [x] Add a root `Makefile` with targets: `build`, `test`, `lint`, `proto`, `clean`
+- [x] Add a `.gitignore` covering Go binaries, `*.pb.go` generated files, `*.glog`, and IDE folders
 
 ### 1.2 Directory Skeleton
-- [ ] Create `api/proto/` directory with a `.gitkeep`
-- [ ] Create `pkg/engine/` directory with a `.gitkeep`
-- [ ] Create `pkg/components/cards/` directory with a `.gitkeep`
-- [ ] Create `pkg/components/grid/` directory with a `.gitkeep`
-- [ ] Create `pkg/components/timing/` directory with a `.gitkeep`
-- [ ] Create `pkg/transport/` directory with a `.gitkeep`
-- [ ] Create `internal/` directory with a `.gitkeep`
-- [ ] Create `cmd/server/` directory as the entry-point for the gRPC server binary
+- [x] Create `api/proto/` directory with a `.gitkeep`
+- [x] Create `pkg/engine/` directory with a `.gitkeep`
+- [x] Create `pkg/components/cards/` directory with a `.gitkeep`
+- [x] Create `pkg/components/grid/` directory with a `.gitkeep`
+- [x] Create `pkg/components/timing/` directory with a `.gitkeep`
+- [x] Create `pkg/transport/` directory with a `.gitkeep`
+- [x] Create `internal/` directory with a `.gitkeep`
+- [x] Create `cmd/server/` directory as the entry-point for the gRPC server binary
 
 ### 1.3 Core Dependencies
-- [ ] Add `google.golang.org/grpc` to `go.mod`
-- [ ] Add `google.golang.org/protobuf` to `go.mod`
-- [ ] Add `github.com/klauspost/compress` (or standard `compress/gzip`) for GZIP support
-- [ ] Add a linter config (`.golangci.yml`) with at minimum `errcheck`, `govet`, `staticcheck`, and `gofmt` enabled
-- [ ] Verify `go build ./...` passes on the empty skeleton
+- [x] Add `google.golang.org/grpc` to `go.mod`
+- [x] Add `google.golang.org/protobuf` to `go.mod`
+- [x] Add `github.com/klauspost/compress` (or standard `compress/gzip`) for GZIP support
+- [x] Add a linter config (`.golangci.yml`) with at minimum `errcheck`, `govet`, `staticcheck`, and `gofmt` enabled
+- [x] Verify `go build ./...` passes on the empty skeleton
 
 ### 1.4 CI Skeleton
-- [ ] Add a GitHub Actions workflow (`.github/workflows/ci.yml`) that runs `go vet ./...` and `go test ./...` on every push
-- [ ] Add a `proto` CI step that regenerates `*.pb.go` and fails if the diff is non-empty (ensures proto files stay in sync)
+- [x] Add a GitHub Actions workflow (`.github/workflows/ci.yml`) that runs `go vet ./...` and `go test ./...` on every push
+- [x] Add a `proto` CI step that regenerates `*.pb.go` and fails if the diff is non-empty (ensures proto files stay in sync)
 
 ---
 

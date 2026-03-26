@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: ".go-version"
+          cache: true
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: go test
+        run: go test ./...
+
+      # TODO(phase2): regenerate proto files and fail if diff is non-empty.
+      # Uncomment once protoc, protoc-gen-go, and protoc-gen-go-grpc are installed.
+      #
+      # - name: Regenerate proto files
+      #   run: make proto
+      #
+      # - name: Check proto diff
+      #   run: |
+      #     if ! git diff --quiet; then
+      #       echo "Proto generated files are out of sync. Run 'make proto' and commit."
+      #       git diff
+      #       exit 1
+      #     fi
