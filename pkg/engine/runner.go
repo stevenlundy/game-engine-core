@@ -273,6 +273,24 @@ func handleInvalidAction(
 // writeReplayEntry marshals the current session state and action to a
 // [ReplayEntry] and appends it to the log. It is a no-op when session.Log
 // is nil.
+//
+// # StateSnapshot timing
+//
+// The snapshot always reflects the state stored in session.State at the moment
+// this function is called:
+//
+//   - Step entries (terminal=false): called after [GameLogic.ApplyAction] has
+//     updated session.State, so the snapshot is the POST-apply state — the
+//     board as it looks after the action was executed.
+//
+//   - Terminal entry (terminal=true): called when [GameLogic.IsTerminal]
+//     returns IsOver=true, before any further action is taken. session.State
+//     is still the post-apply state from the final action, so the terminal
+//     snapshot is also POST-apply.
+//
+// In both cases StateSnapshot == the state the next player would observe.
+// RewardDelta is the reward returned by ApplyAction for that transition
+// (0 for the terminal entry, which carries no new action).
 func writeReplayEntry(session *Session, action Action, reward float64, terminal bool) error {
 	if session.Log == nil {
 		return nil

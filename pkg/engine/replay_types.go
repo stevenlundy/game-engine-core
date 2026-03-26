@@ -37,8 +37,15 @@ type ReplayEntry struct {
 	// ActionTaken is the raw-JSON payload of the action applied this step.
 	ActionTaken JSON `json:"action_taken"`
 
-	// StateSnapshot is the raw-JSON encoding of the game State *after*
-	// ApplyAction was called.
+	// StateSnapshot is the raw-JSON encoding of the game [State] immediately
+	// after [GameLogic.ApplyAction] was called for this step.
+	//
+	// Both regular step entries and the terminal entry use the post-apply
+	// state, so this field always represents the board as the next player
+	// would observe it. The terminal entry carries the final board state;
+	// its ActionTaken and RewardDelta are zero-valued (no new action was
+	// applied to reach the terminal condition — IsTerminal was detected on
+	// the already-updated state).
 	StateSnapshot JSON `json:"state_snapshot"`
 
 	// RewardDelta is the immediate reward received by ActorID this step.

@@ -280,6 +280,31 @@ func (a *GRPCPlayerAdapter) RequestAction(ctx context.Context, update engine.Sta
 // ─────────────────────────────────────────────────────────────────────────────
 // Client-side interceptors
 // ─────────────────────────────────────────────────────────────────────────────
+//
+// # Interceptor scope: unary only
+//
+// The interceptors in this section ([UnaryRetryInterceptor] and
+// [UnaryDeadlineInjectionInterceptor]) apply exclusively to **unary** RPCs
+// (currently [MatchmakingClient.CancelJoin]).
+//
+// The three streaming calls — [MatchmakingClient.Join] (server-streaming),
+// [GameClient.Play] (bidirectional), and [GameClient.GetReplay]
+// (server-streaming) — are intentionally NOT wrapped by retry or
+// deadline-injection interceptors. The reasons are:
+//
+//  1. Streaming retry requires reconnection semantics: the client must
+//     re-establish the stream, re-send the initial join action, and reconcile
+//     any state the server has already advanced. That logic belongs in the
+//     caller (e.g. [engine.GameClient] or the bot loop), not in a generic
+//     transport interceptor.
+//
+//  2. Deadline/timeout for streams is best managed via the context.Context
+//     passed to each call. Pass a context with a deadline or call
+//     context.WithTimeout before invoking Play/JoinLobby/GetReplay.
+//
+// If automatic streaming retry is added in the future, it should be
+// implemented as a named StreamClientInterceptor with explicit reconnect
+// and idempotency guarantees documented alongside it.
 
 // transientCodes are gRPC status codes that are safe to retry.
 var transientCodes = map[codes.Code]bool{
