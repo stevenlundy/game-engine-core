@@ -554,13 +554,16 @@ func (s *GameSessionServer) Play(stream grpc.BidiStreamingServer[pb.Action, pb.S
 	}
 
 	// Send a terminal state update so the client knows the game ended.
+	// Include the reward from the final action so RL clients don't need
+	// to parse the .glog to retrieve it.
 	if sendErr := stream.Send(&pb.StateUpdate{
 		State: &pb.State{
 			Payload:   session.State.Payload,
 			GameId:    session.State.GameID,
 			StepIndex: session.State.StepIndex,
 		},
-		IsTerminal: true,
+		RewardDelta: session.LastReward(),
+		IsTerminal:  true,
 	}); sendErr != nil {
 		// Client may have already disconnected; not a hard failure.
 		s.log.Warn("failed to send terminal update",

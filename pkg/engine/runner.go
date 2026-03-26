@@ -88,7 +88,7 @@ func (r *Runner) Run(ctx context.Context, session *Session, players map[string]P
 			session.winnerID = result.WinnerID
 
 			// Write the terminal replay entry.
-			if writeErr := writeReplayEntry(session, Action{}, 0, true); writeErr != nil {
+			if writeErr := writeReplayEntry(session, Action{}, session.lastReward, true); writeErr != nil {
 				return writeErr
 			}
 			// Flush and close the log.
@@ -117,9 +117,12 @@ func (r *Runner) Run(ctx context.Context, session *Session, players map[string]P
 		}
 
 		// ── 3. Send StateUpdate and receive Action ────────────────────────
+		// RewardDelta carries the reward earned by the *previous* action so
+		// that clients (gRPC and in-process) receive it without having to
+		// parse the .glog. On the very first step it is zero (no prior action).
 		update := StateUpdate{
 			State:       session.State,
-			RewardDelta: 0, // set accurately on the next update
+			RewardDelta: session.lastReward,
 			IsTerminal:  false,
 			ActorID:     activePlayerID,
 		}
@@ -168,6 +171,7 @@ func (r *Runner) Run(ctx context.Context, session *Session, players map[string]P
 			return fmt.Errorf("engine: ApplyAction error at step %d: %w", session.step, err)
 		}
 		session.State = newState
+		session.lastReward = reward
 
 		// ── 6. Write replay entry ─────────────────────────────────────────
 		if err := writeReplayEntry(session, validatedAction, reward, false); err != nil {

@@ -121,14 +121,10 @@ class TestBasicConnection:
     def test_rewards_are_non_negative(self, game_server):
         """reward_delta should be >= 0 on all updates.
 
-        Note: the current transport implementation sends reward_delta=0.0 on
-        all StateUpdates sent to clients — rewards are written to the .glog
-        replay file but not streamed back over gRPC. This test asserts the
-        field is present and non-negative (i.e. not corrupted in transit),
-        and documents the current behaviour so it is explicit.
-
-        A future transport enhancement could populate reward_delta from
-        the result of the previous ApplyAction call.
+        CountdownGame awards 1.0 per step. The runner carries the reward from
+        action N into the StateUpdate for step N+1 (i.e. the next request sent
+        to the client includes the reward for the action it just took). The
+        very first update (step 0, before any action) always has reward_delta=0.
         """
         bot = RecordingBot(game_server.url, player_id="p1")
         try:
@@ -139,6 +135,22 @@ class TestBasicConnection:
         for update in bot.updates:
             assert update.reward_delta >= 0, (
                 f"Negative reward_delta at step {update.state.step_index}: {update.reward_delta}"
+            )
+
+    def test_rewards_are_positive_after_first_step(self, game_server):
+        """Updates after step 0 should carry a positive reward_delta."""
+        bot = RecordingBot(game_server.url, player_id="p1")
+        try:
+            bot.run()
+        finally:
+            bot.close()
+
+        post_action = [u for u in bot.updates if u.state.step_index > 0]
+        assert len(post_action) > 0, "No post-action updates received"
+        for update in post_action:
+            assert update.reward_delta > 0, (
+                f"Expected positive reward at step {update.state.step_index}, "
+                f"got {update.reward_delta}"
             )
 
     def test_step_indices_are_monotonically_increasing(self, game_server):

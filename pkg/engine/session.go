@@ -103,6 +103,11 @@ type Session struct {
 	// State.StepIndex after the first ApplyAction call.
 	step int64
 
+	// lastReward is the reward returned by the most recent ApplyAction call.
+	// The runner carries it forward into the next StateUpdate so that clients
+	// receive the reward for the action they just took.
+	lastReward float64
+
 	// winnerID holds the winner returned by the terminal IsTerminal check.
 	// It is set by the runner when the game ends and may be read by BatchRunner.
 	winnerID string
@@ -164,3 +169,12 @@ func NewSession(cfg SessionConfig, logic GameLogic) (*Session, error) {
 // creating a package-level import cycle. Phase 5 callers that need the
 // canonical constant should import pkg/components/timing directly.
 const defaultAITimeoutFallback = 50 * time.Millisecond
+
+// LastReward returns the reward earned by the most recent action.
+// It is safe to call after [Runner.Run] returns; during a run it reflects
+// the reward from the last completed step.
+func (s *Session) LastReward() float64 { return s.lastReward }
+
+// WinnerID returns the winner ID set when the game reached a terminal state.
+// It is empty until [Runner.Run] returns with a winning result.
+func (s *Session) WinnerID() string { return s.winnerID }
