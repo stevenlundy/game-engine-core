@@ -322,6 +322,111 @@
 
 ---
 
+---
+
+## Phase 9 — Python Client SDK (`clients/python/`)
+
+**Goal:** A pip/uv-installable Python package that handles all gRPC plumbing so AI developers only implement `on_state_update()`.
+
+### 9.1 Project Setup
+- [ ] Create `clients/python/pyproject.toml` using `uv` conventions — name `game-engine-core`, version `0.1.0`, requires Python ≥ 3.11
+- [ ] Add `grpcio`, `grpcio-tools`, and `protobuf` as dependencies in `pyproject.toml`
+- [ ] Create `clients/python/game_engine_core/__init__.py` exporting `GameClient` and `Action`
+- [ ] Add a `Makefile` target `proto-python` that runs `python -m grpc_tools.protoc` to compile `api/proto/*.proto` into `clients/python/game_engine_core/proto/`
+- [ ] Commit the generated `*_pb2.py` and `*_pb2_grpc.py` stubs (or document the generation step)
+- [ ] Add `.python-version` pinning Python `3.11` and a `uv.lock` file
+
+### 9.2 `GameClient` Base Class (`game_engine_core/client.py`)
+- [ ] Define `GameClient` with `__init__(self, server_url: str, player_id: str)` that creates an insecure gRPC channel and a `GameSessionStub`
+- [ ] Implement `join_lobby(self, game_type: str)` that calls `MatchmakingStub.JoinLobby` and blocks until `game_starting=True`, returning the `session_id`
+- [ ] Implement `run(self)` that opens the bidirectional `Play` stream, sends the initial join action, then loops: receives `StateUpdate`, calls `on_state_update()`, sends back the returned `Action`
+- [ ] Define `on_state_update(self, state: StateUpdate) -> Action` as `raise NotImplementedError` — the single method subclasses override
+- [ ] Implement `close(self)` for clean channel shutdown
+- [ ] Handle stream errors and disconnection gracefully (log and re-raise)
+- [ ] Add type hints throughout; export a `StateUpdate` and `Action` dataclass or typed wrapper so callers never import raw proto objects
+
+### 9.3 Helper Utilities
+- [ ] Add `game_engine_core/actions.py` with factory functions `play_card(rank, suit, declared_suit=None) -> Action` and `draw_card() -> Action`
+- [ ] Add `game_engine_core/state.py` with a `RichState` dataclass and a `parse_rich_state(state_update) -> RichState` helper that unmarshals the JSON payload
+
+### 9.4 Tests
+- [ ] Write `tests/test_client.py` using `pytest` — mock the gRPC channel to verify `run()` calls `on_state_update()` for each `StateUpdate` and sends back the returned `Action`
+- [ ] Write a test that confirms `join_lobby` raises an exception on a non-`game_starting` stream error
+- [ ] Run `uv run pytest` and confirm all tests pass
+
+### 9.5 Documentation
+- [ ] Add `clients/python/README.md` covering: install (`uv add git+...` or `pip install .`), quickstart subclassing example, `proto-python` regeneration step
+- [ ] Add a `clients/python/examples/random_agent.py` showing the minimal subclass
+
+---
+
+## Phase 10 — TypeScript Node Client SDK (`clients/ts-node/`)
+
+**Goal:** An npm-installable TypeScript package for server-side Node.js AI bots using `@grpc/grpc-js`.
+
+### 10.1 Project Setup
+- [ ] Create `clients/ts-node/package.json` — name `game-engine-core-node`, version `0.1.0`, `main: "dist/index.js"`, `types: "dist/index.d.ts"`
+- [ ] Add dependencies: `@grpc/grpc-js`, `@grpc/proto-loader`, `google-protobuf`; add dev dependencies: `typescript`, `ts-proto`, `@types/node`, `jest`, `ts-jest`
+- [ ] Create `clients/ts-node/tsconfig.json` targeting `ES2022`, `moduleResolution: node`, `strict: true`, output to `dist/`
+- [ ] Add a `Makefile` target `proto-ts-node` that runs `ts-proto`'s `protoc` plugin to compile `api/proto/*.proto` into `clients/ts-node/src/proto/`
+- [ ] Add `.nvmrc` pinning Node `20 LTS`
+- [ ] Add `build`, `test`, `proto` npm scripts to `package.json`
+
+### 10.2 `GameClient` Base Class (`src/client.ts`)
+- [ ] Define `GameClient` class with `constructor(serverUrl: string, playerId: string)` that creates a `@grpc/grpc-js` channel
+- [ ] Implement `joinLobby(gameType: string): Promise<string>` that calls `Matchmaking.JoinLobby` and resolves with `session_id` when `game_starting=true`
+- [ ] Implement `run(): Promise<void>` that opens the `GameSession.Play` bidi stream, sends the initial join action, then loops: receives `StateUpdate`, calls `onStateUpdate()`, sends back the returned `Action`
+- [ ] Define `abstract onStateUpdate(state: StateUpdate): Action | Promise<Action>` — the single method subclasses override
+- [ ] Implement `close(): void` for clean channel shutdown
+- [ ] Export `StateUpdate`, `Action`, and `GameClient` from `src/index.ts`
+
+### 10.3 Helper Utilities
+- [ ] Add `src/actions.ts` with `playCard(rank: string, suit: string, declaredSuit?: string): Action` and `drawCard(): Action` factory functions
+- [ ] Add `src/state.ts` with a `RichState` interface and `parseRichState(update: StateUpdate): RichState` helper
+
+### 10.4 Tests
+- [ ] Write `tests/client.test.ts` using `jest` — mock the gRPC channel to verify `run()` calls `onStateUpdate()` for each `StateUpdate` and sends back the returned `Action`
+- [ ] Confirm `npm test` passes with zero failures
+
+### 10.5 Documentation
+- [ ] Add `clients/ts-node/README.md` covering: install (`npm install`), quickstart subclassing example, `proto` regeneration step
+- [ ] Add `clients/ts-node/examples/randomAgent.ts` showing the minimal subclass
+
+---
+
+## Phase 11 — TypeScript Web Client SDK (`clients/ts-web/`)
+
+**Goal:** A browser-compatible TypeScript package using `grpc-web` for in-browser visualizers and web UIs.
+
+### 11.1 Project Setup
+- [ ] Create `clients/ts-web/package.json` — name `game-engine-core-web`, version `0.1.0`, `main: "dist/index.js"`, `types: "dist/index.d.ts"`
+- [ ] Add dependencies: `grpc-web`, `google-protobuf`; add dev dependencies: `typescript`, `ts-proto`, `webpack` (or `vite`), `jest`, `ts-jest`
+- [ ] Create `clients/ts-web/tsconfig.json` targeting `ES2020`, `lib: ["ES2020", "DOM"]`, `strict: true`, output to `dist/`
+- [ ] Add a `Makefile` target `proto-ts-web` that compiles `api/proto/*.proto` into `clients/ts-web/src/proto/` using `ts-proto` in `grpc-web` mode (unary + server-streaming only — no bidi in browsers)
+- [ ] Add `.nvmrc` pinning Node `20 LTS`
+- [ ] Add `build`, `test`, `proto` npm scripts to `package.json`
+
+### 11.2 `GameWebClient` Base Class (`src/client.ts`)
+- [ ] Define `GameWebClient` class with `constructor(serverUrl: string, playerId: string)` using a `grpc-web` client
+- [ ] Note: browsers do not support bidi streaming — implement a **polling / server-streaming** model: `watchSession(sessionId: string): void` that subscribes to `StateUpdate` events via `GetReplay` stream or a dedicated watch RPC
+- [ ] Implement `onStateUpdate(state: StateUpdate): void` as the override point (web clients observe state; actions are submitted via a separate unary `SubmitAction` call if a suitable RPC exists, or noted as out-of-scope)
+- [ ] Export `GameWebClient`, `StateUpdate` from `src/index.ts`
+
+### 11.3 Helper Utilities
+- [ ] Add `src/state.ts` with `RichState` interface and `parseRichState` helper (same shape as ts-node)
+- [ ] Add `src/replay.ts` with `ReplayPlayer` class that reads a `.glog` (fetched as JSON-L text) and emits entries at configurable speed — useful for post-game visualization
+
+### 11.4 Tests
+- [ ] Write `tests/client.test.ts` using `jest` with `jsdom` environment — mock `grpc-web` transport and confirm `onStateUpdate` is called for each emitted `StateUpdate`
+- [ ] Write tests for `ReplayPlayer` — confirm entries are emitted in order and `stop()` halts playback
+- [ ] Confirm `npm test` passes with zero failures
+
+### 11.5 Documentation
+- [ ] Add `clients/ts-web/README.md` covering: install, browser compatibility notes, gRPC-Web proxy requirement (Envoy), quickstart observer example
+- [ ] Add `clients/ts-web/examples/replayViewer.ts` showing `ReplayPlayer` usage
+
+---
+
 ## Dependency Order (Quick Reference)
 
 ```
@@ -333,6 +438,8 @@ Phase 1 (Scaffold)
                     │       └── Phase 6 (Replay Log — depends on 5 types)
                     └── Phase 7 (Transport — depends on 2, 3, 5, 6)
                             └── Phase 8 (Testing — depends on all above)
+                                    └── Phases 9, 10, 11 (Client SDKs — depend on Phase 2 protos)
 ```
 
 Phases 4, 5, and 6 can be developed in parallel once Phase 3 is complete.
+Phases 9, 10, and 11 (Client SDKs) can be developed in parallel with each other once Phase 2 is complete.

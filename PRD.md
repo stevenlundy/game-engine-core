@@ -11,6 +11,8 @@
 
 -   **Standardized "Exhaust":** Every action must produce a structured log entry for both the Visualizer and the RL Agents.
 
+-   **Multi-Language Client SDKs:** Ship pip-installable (Python) and npm-installable (TypeScript) base clients so AI developers never need to understand gRPC plumbing.
+
 * * * * *
 
 ### 2. The Core Interface: `GameLogic`
@@ -35,7 +37,6 @@ type GameLogic interface {
     GetRichState(state State) interface{}    // For humans/heuristics
     GetTensorState(state State) []float32    // For RL Agents
 }
-
 ```
 
 * * * * *
@@ -52,7 +53,7 @@ The server uses **Bidirectional Streaming** to minimize latency.
 
 #### **B. Modular Components**
 
-The `core` repo will house a `/pkg/components` folder containing pre-built logic.
+The `core` repo houses a `/pkg/components` folder containing pre-built logic.
 
 -   **`cards/`:** Handle Deck shuffling (Fisher-Yates), Dealing, and "Hidden State" (masking cards in a hand from other players).
 
@@ -60,61 +61,138 @@ The `core` repo will house a `/pkg/components` folder containing pre-built logic
 
 -   **`timing/`:** Strict timeout enforcement. If an AI doesn't respond in **50ms**, the server auto-folds or picks a random move.
 
+#### **C. Multi-Language Client SDKs (`clients/`)**
+
+`pkg/` is strictly Go server logic. A top-level `clients/` directory houses language-specific SDKs. Each SDK handles the gRPC plumbing so that AI developers only implement `on_state_update()` / `onStateUpdate()`.
+
+| Directory | Language | Package Manager | Target Audience |
+|---|---|---|---|
+| `clients/python/` | Python 3.11+ | `uv` / PyPI | RL researchers, Lab orchestration |
+| `clients/ts-node/` | TypeScript (Node) | `npm` | Server-side AI bots, scripted agents |
+| `clients/ts-web/` | TypeScript (Browser) | `npm` | In-browser visualizers, web UIs |
+
+Each client folder is a self-contained package with its own dependency manifest (`pyproject.toml` / `package.json`) and its own generated protobuf stubs compiled from `api/proto/`.
+
+#### **D. The Developer Experience**
+
+A game repo developer imports the SDK and overrides a single method:
+
+**Python (`game-crazy-eights`):**
+```python
+from game_engine_core import GameClient
+
+class MyCrazyEightsAI(GameClient):
+    def on_state_update(self, state):
+        # Inspect state.rich_state, return an Action
+        return self.play_card("8", "S", declared_suit="H")
+```
+
+**TypeScript (Node):**
+```typescript
+import { GameClient } from "game-engine-core";
+
+class MyCrazyEightsAI extends GameClient {
+  onStateUpdate(state: StateUpdate): Action {
+    return { drawCard: {} };
+  }
+}
+```
+
 * * * * *
+
 ### 4. The Standardized Replay & Telemetry System
 
-The "Replay Log" is the primary data output of the engine. Its purpose is to decouple the **execution** of a game from its **analysis** and **visualization**. By recording every state transition in a standardized format, the engine enables three critical workflows:
+The "Replay Log" is the primary data output of the engine. Its purpose is to decouple **execution** from **analysis** and **visualization**.
 
-1.  **Post-Game Visualization:** A separate renderer can "play back" the file to create visuals for YouTube or UI debugging without needing the game logic.
+1.  **Post-Game Visualization:** A separate renderer can "play back" the file without needing the game logic.
 
-2.  **Scientific Analysis:** The `game-engine-lab` can parse these logs to calculate win rates, balance metrics, and strategy effectiveness.
+2.  **Scientific Analysis:** The `game-engine-lab` parses these logs to calculate win rates, balance metrics, and strategy effectiveness.
 
-3.  **Heuristic Discovery:** LLMs or data models can ingest these logs to find patterns (e.g., "Players who control the center of the board win 70% of the time").
+3.  **Heuristic Discovery:** LLMs or data models can ingest these logs to find patterns.
 
 #### **A. The Log Format (.glog)**
 
-To ensure maximum compatibility, the engine will produce a structured JSON-L (JSON Lines) or Protobuf-serialized file containing the following schema:
-
 | **Field** | **Type** | **Justification** |
 | --- | --- | --- |
-| `session_metadata` | `object` | Records the ruleset version, player IDs, and timestamps to ensure the analysis is context-aware. |
-| `step_index` | `int` | An incremental counter (tick) to maintain the chronological order of moves. |
-| `actor_id` | `string` | Identifies which player (Human or AI) performed the action. |
-| `action_taken` | `object` | The raw input provided by the client (e.g., `card_played: "Ace"`, `coord: [2,2]`). |
-| `state_snapshot` | `object` | The "Rich State" of the game immediately *after* the action was applied. |
-| `reward_delta` | `float` | The immediate change in score or utility. Crucial for Reinforcement Learning (RL) training. |
-| `is_terminal` | `boolean` | Flag indicating if this specific move ended the game. |
+| `session_metadata` | `object` | Records the ruleset version, player IDs, and timestamps. |
+| `step_index` | `int` | Chronological order of moves. |
+| `actor_id` | `string` | Identifies which player performed the action. |
+| `action_taken` | `object` | The raw input provided by the client. |
+| `state_snapshot` | `object` | The "Rich State" immediately *after* the action. |
+| `reward_delta` | `float` | Immediate change in score. Crucial for RL training. |
+| `is_terminal` | `boolean` | Flag indicating if this move ended the game. |
 
 #### **B. Storage & Efficiency**
 
--   **Buffer Management:** The engine will stream log entries to a buffer during gameplay and flush to disk upon game completion to avoid I/O bottlenecks during high-speed simulations.
+-   **Buffer Management:** Log entries are streamed to a buffer and flushed on game completion.
 
--   **Compression:** In "Headless" mode (where millions of games are run), the engine will support GZIP compression of the logs to save storage space.
+-   **Compression:** Headless mode supports GZIP compression.
 
 * * * * *
 
 ### 5. Repository Structure
 
-Plaintext
-
 ```
 game-engine-core/
 ├── api/
-│   └── proto/             # .proto definitions for Matchmaking & Gameplay
-├── pkg/
-│   ├── engine/            # The Runner (Loops, Timeouts, Logging)
+│   └── proto/             # Master .proto definitions (Source of Truth)
+│       └── gen/           # Generated Go stubs (committed)
+├── clients/               # Language-agnostic SDKs
+│   ├── python/            # Python base client (pip/uv installable)
+│   │   ├── pyproject.toml
+│   │   ├── game_engine_core/
+│   │   │   ├── __init__.py
+│   │   │   ├── client.py      # GameClient base class
+│   │   │   └── proto/         # Generated Python stubs
+│   │   └── tests/
+│   ├── ts-node/           # TypeScript (Node.js) base client
+│   │   ├── package.json
+│   │   ├── tsconfig.json
+│   │   ├── src/
+│   │   │   ├── client.ts      # GameClient base class
+│   │   │   └── proto/         # Generated TS stubs
+│   │   └── tests/
+│   └── ts-web/            # TypeScript (Browser) base client
+│       ├── package.json
+│       ├── tsconfig.json
+│       ├── src/
+│       │   ├── client.ts      # WebSocket/gRPC-Web bridge
+│       │   └── proto/         # Generated TS stubs (grpc-web)
+│       └── tests/
+├── pkg/                   # GO-ONLY SERVER LOGIC
+│   ├── engine/            # Rule execution & session management
 │   ├── components/        # Cards, Grids, Dice, Math
-│   └── transport/         # gRPC server & client boilerplate
-├── internal/              # Non-exported utilities (Auth, Net-scaling)
-├── go.mod                 # Core dependencies (grpc, protobuf)
+│   └── transport/         # Server-side gRPC & matchmaking
+├── internal/              # Non-exported utilities (Auth, TLS)
+├── cmd/
+│   ├── server/            # gRPC server binary entry point
+│   └── glogtool/          # .glog inspection CLI
+├── examples/
+│   └── minimal_game/      # Smallest possible GameLogic example
+├── go.mod
 └── README.md
-
 ```
 
 * * * * *
 
-### 6. "Headless" vs. "Live" Mode
+### 6. Protobuf Strategy
 
--   **Live Mode:** The server runs at "human speed" (e.g., waiting 30s for a move) and streams data to the gRPC visualizer.
+The `api/proto/` folder is the **single source of truth** for all language SDKs.
 
--   **Headless Mode:** The server runs as fast as the CPU allows. All I/O is suppressed except for the final Replay Log. This is what the **Lab** will trigger for its experiments.
+-   **Go server:** `make proto` → compiles to `api/proto/gen/` via `protoc-gen-go` + `protoc-gen-go-grpc`.
+
+-   **Python client:** `make proto-python` → compiles to `clients/python/game_engine_core/proto/` via `grpc_tools.protoc`.
+
+-   **TypeScript Node client:** `make proto-ts-node` → compiles to `clients/ts-node/src/proto/` via `ts-proto`.
+
+-   **TypeScript Web client:** `make proto-ts-web` → compiles to `clients/ts-web/src/proto/` via `ts-proto` (gRPC-Web mode).
+
+Recommended: adopt **Buf** (`buf.build`) for cross-language protobuf generation management.
+
+* * * * *
+
+### 7. "Headless" vs. "Live" Mode
+
+-   **Live Mode:** The server runs at "human speed" (e.g., waiting 30s for a move) and streams data to connected clients.
+
+-   **Headless Mode:** The server runs as fast as the CPU allows. All I/O is suppressed except for the final Replay Log. This is what the **Lab** triggers for experiments.
