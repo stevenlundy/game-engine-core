@@ -3,7 +3,7 @@ import type { Config } from "jest";
 const config: Config = {
   preset: "ts-jest",
   testEnvironment: "node",
-  testMatch: ["**/src/**/*.test.ts"],
+  testMatch: ["**/src/**/*.test.ts", "**/src/**/*.integration.test.ts"],
   moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json", "node"],
   moduleNameMapper: {
     // Allow TypeScript source files imported with .js extension (Node16 module resolution)

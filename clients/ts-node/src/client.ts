@@ -94,15 +94,31 @@ export abstract class GameClient {
         }
       };
 
+      // Send the initial join action so the server knows which player this is.
+      // The server requires the first message on the Play stream to have
+      // actor_id set to the player's id (and an optional JSON session_id in
+      // the payload for multi-player sessions).
+      const joinAction: Action = {
+        actorId: this.playerId,
+        payload: Buffer.alloc(0),
+        timestampMs: Date.now(),
+      };
+      stream.write(joinAction);
+
       stream.on("data", async (update: StateUpdate) => {
         try {
+          // Call onStateUpdate for every update — including the terminal one —
+          // so that subclasses can observe the final state. This mirrors the
+          // Python client's behaviour.
+          const action = await Promise.resolve(this.onStateUpdate(update));
+
           if (update.isTerminal) {
+            // The game is over; don't send the action back, just clean up.
             cleanup();
             resolve();
             return;
           }
 
-          const action = await Promise.resolve(this.onStateUpdate(update));
           // Stamp the actor id before sending
           const toSend: Action = { ...action, actorId: this.playerId };
           stream.write(toSend);

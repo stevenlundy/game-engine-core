@@ -162,18 +162,23 @@ describe("GameClient.run", () => {
 
     await runPromise;
 
-    expect(onStateUpdate).toHaveBeenCalledTimes(2);
+    expect(onStateUpdate).toHaveBeenCalledTimes(3); // 2 non-terminal + 1 terminal
     expect(onStateUpdate).toHaveBeenCalledWith(update1);
     expect(onStateUpdate).toHaveBeenCalledWith(update2);
-    // Two actions written back
-    expect(playStream.written).toHaveLength(2);
-    // Actor id is stamped
+    expect(onStateUpdate).toHaveBeenCalledWith(terminal);
+    // Initial join action + two response actions written back (terminal action not sent)
+    expect(playStream.written).toHaveLength(3);
+    // Initial join action has actor id and empty payload
     expect(playStream.written[0].actorId).toBe("player-1");
+    expect(playStream.written[0].payload).toEqual(Buffer.alloc(0));
+    // Actor id is stamped on subsequent actions too
+    expect(playStream.written[1].actorId).toBe("player-1");
+    expect(playStream.written[2].actorId).toBe("player-1");
   });
 
-  it("resolves immediately on the first terminal update (no onStateUpdate call)", async () => {
+  it("calls onStateUpdate for the terminal update but does not send an action back", async () => {
     const playStream = new FakeDuplexStream();
-    const onStateUpdate = jest.fn();
+    const onStateUpdate = jest.fn().mockReturnValue(drawCard());
 
     const client = new TestClient(onStateUpdate);
     client.mockSession = {
@@ -185,7 +190,11 @@ describe("GameClient.run", () => {
     playStream.emit("data", makeStateUpdate({ isTerminal: true }));
 
     await runPromise;
-    expect(onStateUpdate).not.toHaveBeenCalled();
+    // onStateUpdate IS called for the terminal update
+    expect(onStateUpdate).toHaveBeenCalledTimes(1);
+    expect(onStateUpdate).toHaveBeenCalledWith(makeStateUpdate({ isTerminal: true }));
+    // Only the initial join action is written — no action response for terminal
+    expect(playStream.written).toHaveLength(1);
     expect(playStream.ended).toBe(true);
   });
 
@@ -234,8 +243,8 @@ describe("GameClient.run", () => {
 
     await runPromise;
 
-    expect(asyncHandler).toHaveBeenCalledTimes(1);
-    expect(playStream.written).toHaveLength(1);
+    expect(asyncHandler).toHaveBeenCalledTimes(2); // 1 non-terminal + 1 terminal
+    expect(playStream.written).toHaveLength(2); // initial join + 1 action response (terminal not sent)
   });
 });
 

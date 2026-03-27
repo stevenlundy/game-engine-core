@@ -6,7 +6,8 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "test": "jest",
+    "test": "jest --testPathPattern='(?<!integration)\\.test\\.ts$'",
+    "test:integration": "jest --testPathPattern='integration'",
     "clean": "rm -rf dist",
     "proto": "PATH=$(npm bin):$PATH protoc --plugin=protoc-gen-ts_proto=./node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=src/proto --ts_proto_opt=outputServices=grpc-js,env=node,esModuleInterop=true --proto_path=../../api/proto ../../api/proto/common.proto ../../api/proto/matchmaking.proto ../../api/proto/gamesession.proto"
   },
