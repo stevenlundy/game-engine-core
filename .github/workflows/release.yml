@@ -155,7 +155,10 @@ jobs:
     environment:
       name: npm
       url: https://www.npmjs.com/package/game-engine-core-node
+    # id-token: write lets setup-node exchange GitHub's OIDC token for an
+    # npm publish token automatically — no NPM_TOKEN secret needed.
     permissions:
+      id-token: write
       contents: read
     steps:
       - uses: actions/checkout@v4
@@ -175,11 +178,9 @@ jobs:
         run: npm run build
         working-directory: clients/ts-node
 
-      - name: Publish
-        run: npm publish --access public
+      - name: Publish (with provenance attestation)
+        run: npm publish --access public --provenance
         working-directory: clients/ts-node
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   # ── 4. Publish: TypeScript Web SDK to npm ────────────────────────────────
   publish-ts-web:
@@ -190,6 +191,7 @@ jobs:
       name: npm
       url: https://www.npmjs.com/package/game-engine-core-web
     permissions:
+      id-token: write
       contents: read
     steps:
       - uses: actions/checkout@v4
@@ -209,11 +211,9 @@ jobs:
         run: npm run build
         working-directory: clients/ts-web
 
-      - name: Publish
-        run: npm publish --access public
+      - name: Publish (with provenance attestation)
+        run: npm publish --access public --provenance
         working-directory: clients/ts-web
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   # ── 5. Create GitHub Release ──────────────────────────────────────────────
   github-release:

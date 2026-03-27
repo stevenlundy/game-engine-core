@@ -95,12 +95,14 @@ Releases are fully automated via the [release workflow](.github/workflows/releas
 1. **PyPI Trusted Publisher** — configure OIDC at https://pypi.org/manage/account/publishing/
    - Owner: `stevenlundy`, Repo: `game-engine-core`, Workflow: `release.yml`, Environment: `pypi`
 
-2. **npm token** — create an Automation token at https://www.npmjs.com/settings/~/tokens
-   - Add as `NPM_TOKEN` secret at https://github.com/stevenlundy/game-engine-core/settings/secrets/actions
+2. **npm Provenance (OIDC)** — no secret needed; `setup-node` exchanges GitHub's OIDC token automatically.
+   You do need to enable publishing from CI on npmjs.com:
+   - Go to https://www.npmjs.com/settings/~/packages once the packages are first published
+   - Or: publish manually the first time with `npm publish --access public` from your local machine (authenticated via `npm login`), then subsequent releases use OIDC automatically
 
 3. **GitHub Environments** — create two environments at https://github.com/stevenlundy/game-engine-core/settings/environments
    - `pypi` (used by the Python publish job)
-   - `npm` (used by both TS publish jobs)
+   - `npm` (used by both TS publish jobs; can add deployment protection rules here)
 
 ### Release Steps
 
