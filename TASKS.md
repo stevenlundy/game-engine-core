@@ -451,6 +451,16 @@ The package also bundles `ReplayPlayer` and `fetchGlog` as standalone utility ex
 
 ---
 
+## Phase 12 — Release Infrastructure Hardening
+
+**Goal:** Make the release pipeline fully automated and zero-maintenance.
+
+### 12.1 npm Token Rotation (pick one)
+- [ ] **Option A — Fix OIDC:** Investigate why `npm publish --provenance` with `setup-node`'s OIDC token exchange succeeds in publishing the sigstore attestation but returns `E404` on the registry PUT. The provenance statement *is* being published (visible at search.sigstore.dev) suggesting the OIDC exchange works but the registry auth context is lost before the PUT. Try: (a) `npm publish` without `--provenance` but with `id-token: write` to see if basic OIDC publish works; (b) check npm CLI version on runner — upgrade if < 10; (c) file issue against `actions/setup-node` if the token scoping is the root cause.
+- [ ] **Option B — Token expiry notification:** Add a scheduled GitHub Actions workflow (`.github/workflows/token-check.yml`) that runs monthly, checks the `NPM_TOKEN` secret is set and not close to expiry (npm granular tokens include expiry in the JWT — decode and compare to today), and opens a GitHub Issue titled "⚠️ NPM_TOKEN expires in N days" if expiry is within 30 days. This ensures the 90-day token is always renewed before it blocks a release.
+
+---
+
 ## Dependency Order (Quick Reference)
 
 ```
