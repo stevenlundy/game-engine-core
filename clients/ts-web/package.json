@@ -1,14 +1,18 @@
 {
   "name": "game-engine-core-web",
   "version": "0.1.0",
-  "description": "Browser-only observer SDK for game-engine-core — replay and state watching",
+  "description": "Browser client SDK for game-engine-core — interactive GameWebClient + passive observer/replay",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
     "test": "jest",
     "clean": "rm -rf dist",
-    "proto": "PATH=$(npm bin):$PATH protoc --plugin=protoc-gen-ts_proto=./node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=src/proto --ts_proto_opt=env=browser,outputServices=false,esModuleInterop=true --proto_path=../../api/proto ../../api/proto/common.proto ../../api/proto/matchmaking.proto ../../api/proto/gamesession.proto"
+    "proto": "PATH=$(npm bin):$PATH protoc --plugin=protoc-gen-ts_proto=./node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=src/proto '--ts_proto_opt=outputServices=grpc-js,env=node,esModuleInterop=true' --proto_path=../../api/proto ../../api/proto/common.proto ../../api/proto/matchmaking.proto ../../api/proto/gamesession.proto"
+  },
+  "dependencies": {
+    "@grpc/grpc-js": "^1.11.3",
+    "grpc-web": "^1.5.0"
   },
   "devDependencies": {
     "@types/jest": "^29.5.12",
@@ -17,7 +21,7 @@
     "jest-environment-jsdom": "^29.7.0",
     "ts-jest": "^29.1.4",
     "ts-node": "^10.9.2",
-    "ts-proto": "^1.181.2",
+    "ts-proto": "^2.11.6",
     "typescript": "^5.4.5"
   }
 }

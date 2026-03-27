@@ -1,172 +1,164 @@
 # game-engine-core-web
 
-> **Browser-only** observer SDK for [game-engine-core](https://github.com/game-engine/game-engine-core).  
-> Watch and replay game sessions — no Node.js, no bidi streaming, no action sending.
+Browser client SDK for [game-engine-core](../../README.md).
+
+This package provides **two things**:
+
+1. **`GameWebClient`** — an interactive abstract base class for writing
+   browser-based AI agents that play live games against the engine (Phase 11).
+2. **`ReplayPlayer` + `fetchGlog`** — a passive observer SDK for replaying
+   finished game sessions in the browser (unchanged from earlier phases).
 
 ---
 
-## Purpose
+## Transport strategy: Option A (one long-lived stream)
 
-This package lets a browser application:
+The `GameWebClient` opens **a single bidirectional `Play` stream** for the
+entire game.  Because the game is turn-based the protocol is naturally
+sequential:
 
-1. **Fetch & replay** recorded game sessions (`.glog` newline-delimited JSON files) via `fetchGlog` + `ReplayPlayer`.
-2. **Decode state snapshots** from replay entries via `parseStateSnapshot`.
-3. (Advanced) **Observe live sessions** by connecting through an Envoy gRPC-Web proxy — see the [gRPC-Web proxy note](#grpc-web-proxy-note) below.
+```
+open stream
+  ← recv StateUpdate  (server sends first state)
+  if terminal → close, done
+  → call onStateUpdate(update)  (subclass decides action)
+  → send Action
+  ← recv StateUpdate
+  ...repeat until terminal...
+```
+
+This avoids the overhead of opening a new HTTP request per turn and keeps the
+implementation identical to the ts-node client.
+
+### Envoy gRPC-Web proxy
+
+Browsers cannot speak raw HTTP/2 gRPC.  You need an **Envoy** proxy in front
+of the game-engine server to translate gRPC-Web (HTTP/1.1) to gRPC (HTTP/2).
+
+Start one with Docker:
+
+```bash
+docker run --rm -p 8080:8080 \
+  -v "$(pwd)/docker/envoy.yaml:/etc/envoy/envoy.yaml:ro" \
+  envoyproxy/envoy:v1.29-latest \
+  -c /etc/envoy/envoy.yaml
+```
+
+The configuration in [`docker/envoy.yaml`](./docker/envoy.yaml) listens on
+port **8080** and proxies to `host.docker.internal:50051` (where the
+game-engine gRPC server runs).
 
 ---
 
-## Install
+## Quickstart
+
+### 1 — Install
 
 ```bash
 npm install game-engine-core-web
 ```
 
-Or, from source:
-
-```bash
-cd clients/ts-web
-npm install
-npm run build
-```
-
----
-
-## Quick Start
-
-### Replay a recorded session
+### 2 — Subclass `GameWebClient`
 
 ```typescript
-import { fetchGlog } from "game-engine-core-web";
+import { GameWebClient } from "game-engine-core-web";
+import type { Action, StateUpdate } from "game-engine-core-web";
+
+class MyAgent extends GameWebClient {
+  onStateUpdate(update: StateUpdate): Action {
+    // Parse the state and decide what to do
+    const payload = JSON.parse(Buffer.from(update.state!.payload).toString());
+    // ... your logic here ...
+    return {
+      actorId: "",                              // stamped automatically by run()
+      payload: Buffer.from(JSON.stringify({ type: "draw_card" })),
+      timestampMs: Date.now(),
+    };
+  }
+}
+
+// Connect through the Envoy proxy on port 8080
+const agent = new MyAgent("http://localhost:8080", "player-1");
+
+const sessionId = await agent.joinLobby("crazy-eights");
+console.log("session:", sessionId);
+
+await agent.run();
+agent.close();
+```
+
+See [`examples/randomAgent.ts`](./examples/randomAgent.ts) for a complete
+working example.
+
+### 3 — Replay viewer
+
+```typescript
+import { fetchGlog, ReplayPlayer } from "game-engine-core-web";
 
 const player = await fetchGlog("https://your-server/sessions/abc123.glog");
 
 player.onEntry = (entry, index) => {
-  console.log(`Step ${index}`, entry);
+  console.log(`Step ${index}: actor=${entry.actorId} terminal=${entry.isTerminal}`);
 };
-
-player.onComplete = () => {
-  console.log("Replay complete!");
-};
-
-// Play at 500 ms per step (default)
-player.play();
-
-// Or at a custom speed
-player.play(200); // 200 ms per step
-
-// Stop at any time
-player.stop();
-```
-
-### Parse a `.glog` file you already have in memory
-
-```typescript
-import { ReplayPlayer } from "game-engine-core-web";
-
-const text = await someFile.text(); // e.g. from a <input type="file">
-const player = ReplayPlayer.fromJsonLines(text);
-player.onEntry = (entry) => console.log(entry);
-player.play(500);
-```
-
-### Decode a state snapshot payload
-
-```typescript
-import { parseStateSnapshot } from "game-engine-core-web";
-
-// entry.stateSnapshot is a Uint8Array of UTF-8 JSON
-const state = parseStateSnapshot(entry.stateSnapshot);
-console.log(state); // { board: "...", score: 42, ... }
+player.onComplete = () => console.log("Done!");
+player.play(500); // 500 ms per step
 ```
 
 ---
 
-## API Reference
+## Migration from ts-node
 
-### `fetchGlog(url: string): Promise<ReplayPlayer>`
+To swap the ts-node `GameClient` for the browser `GameWebClient`:
 
-Fetches a newline-delimited JSON `.glog` file from `url` using the browser
-Fetch API, parses it, and returns a `ReplayPlayer`.
+```diff
+-import { GameClient } from "game-engine-core-node";
++import { GameWebClient as GameClient } from "game-engine-core-web";
+```
 
-Throws if the HTTP response is not `2xx`.
+That's it — the public API (`constructor`, `joinLobby`, `run`, `onStateUpdate`,
+`close`) is **identical**.
 
 ---
 
-### `class ReplayPlayer`
+## API reference
+
+### `GameWebClient` (abstract)
 
 | Member | Description |
-|---|---|
-| `constructor(entries: ReplayEntry[])` | Create from a pre-parsed array. |
-| `onEntry` | `((entry, index) => void) \| null` — called for each step. |
-| `onComplete` | `(() => void) \| null` — called after the last step. |
-| `play(speedMs = 500)` | Start (or restart) playback at the given interval. |
-| `stop()` | Halt playback immediately. |
-| `static fromJsonLines(text)` | Parse a `.glog` text string and return a `ReplayPlayer`. |
+|--------|-------------|
+| `constructor(serverUrl, playerId)` | `serverUrl` is the Envoy proxy URL (e.g. `"http://localhost:8080"`). |
+| `joinLobby(gameType): Promise<string>` | Join a lobby; resolves with `sessionId` when the game starts. |
+| `run(): Promise<void>` | Open one stream, loop until terminal. |
+| `abstract onStateUpdate(update): Action \| Promise<Action>` | Override to implement your agent logic. |
+| `close(): void` | Shut down gRPC channels. |
+| `protected createMatchmakingClient()` | Override for testing or custom transports. |
+| `protected createGameSessionClient()` | Override for testing or custom transports. |
 
----
+### `RichState` / `parseRichState`
 
-### `parseStateSnapshot(payload: Uint8Array | string): Record<string, unknown>`
+```typescript
+import { parseRichState } from "game-engine-core-web";
 
-Decode an opaque state-snapshot payload.  Tries UTF-8 → JSON; on failure
-returns `{ raw: "<original text>" }`.
-
----
-
-### `interface StateUpdate`
-
-TypeScript mirror of the `StateUpdate` proto message (see `src/observer.ts`).
-
----
-
-## gRPC-Web Proxy Note
-
-The browser cannot make raw HTTP/2 gRPC calls.  Real-time observation of live
-sessions requires an **Envoy** (or compatible) gRPC-Web proxy:
-
+const rich = parseRichState(update);
+console.log(rich.gameState);   // parsed JSON payload
+console.log(rich.stepIndex);
+console.log(rich.isTerminal);
 ```
-Browser ──(gRPC-Web/HTTP1.1)──▶ Envoy Proxy ──(gRPC/HTTP2)──▶ game-engine server
-```
-
-Envoy configuration reference:
-<https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/grpc_web_filter>
-
-For replay-only use (this package's primary purpose) **no proxy is needed** —
-only standard HTTP `fetch` is used.
-
----
-
-## Proto Regeneration
-
-Generated files live in `src/proto/`.  To regenerate after editing `.proto`
-sources in `api/proto/`:
-
-```bash
-cd clients/ts-web
-npm install          # ensures protoc-gen-ts_proto is present
-npm run proto
-```
-
-This runs:
-
-```bash
-protoc \
-  --plugin=protoc-gen-ts_proto=./node_modules/.bin/protoc-gen-ts_proto \
-  --ts_proto_out=src/proto \
-  --ts_proto_opt=env=browser,outputServices=false,esModuleInterop=true \
-  --proto_path=../../api/proto \
-  ../../api/proto/common.proto \
-  ../../api/proto/matchmaking.proto \
-  ../../api/proto/gamesession.proto
-```
-
-Requires `protoc` ≥ 3 to be on your `PATH`.
 
 ---
 
 ## Development
 
 ```bash
-npm run build   # compile TypeScript → dist/
-npm test        # run Jest tests (jsdom environment)
-npm run clean   # remove dist/
+# Install deps
+npm install
+
+# Regenerate proto stubs (requires protoc in PATH)
+npm run proto
+
+# Run tests
+npm test
+
+# Type-check without emitting
+npx tsc --noEmit
 ```

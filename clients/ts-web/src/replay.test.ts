@@ -9,8 +9,8 @@ function makeEntry(stepIndex: number, isTerminal = false): ReplayEntry {
   return {
     stepIndex,
     actorId: `player-${stepIndex}`,
-    actionTaken: new Uint8Array(0),
-    stateSnapshot: new Uint8Array(0),
+    actionTaken: Buffer.alloc(0),
+    stateSnapshot: Buffer.alloc(0),
     rewardDelta: stepIndex * 1.0,
     isTerminal,
   };

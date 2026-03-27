@@ -78,15 +78,15 @@ export class ReplayPlayer {
           actionTaken:
             obj["action_taken"] != null
               ? typeof obj["action_taken"] === "string"
-                ? new TextEncoder().encode(obj["action_taken"] as string)
-                : new Uint8Array(obj["action_taken"] as number[])
-              : new Uint8Array(0),
+                ? Buffer.from(obj["action_taken"] as string, "utf8")
+                : Buffer.from(obj["action_taken"] as number[])
+              : Buffer.alloc(0),
           stateSnapshot:
             obj["state_snapshot"] != null
               ? typeof obj["state_snapshot"] === "string"
-                ? new TextEncoder().encode(obj["state_snapshot"] as string)
-                : new Uint8Array(obj["state_snapshot"] as number[])
-              : new Uint8Array(0),
+                ? Buffer.from(obj["state_snapshot"] as string, "utf8")
+                : Buffer.from(obj["state_snapshot"] as number[])
+              : Buffer.alloc(0),
           rewardDelta: (obj["reward_delta"] as number | undefined) ?? 0,
           isTerminal: (obj["is_terminal"] as boolean | undefined) ?? false,
         } satisfies ReplayEntry;

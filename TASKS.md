@@ -396,34 +396,58 @@
 
 ## Phase 11 — TypeScript Web Client SDK (`clients/ts-web/`)
 
-**Goal:** A browser-compatible TypeScript package using `grpc-web` for in-browser visualizers and web UIs.
+**Goal:** A browser-compatible TypeScript package that gives web developers the **identical** `joinLobby` / `run` / `onStateUpdate` / `close` pattern as the `ts-node` SDK. A human player or browser-based AI can play the game in real time from a web UI with a one-line import swap from `ts-node`.
+
+**Transport strategy (Option A — one long-lived stream, sequential send/recv):**
+The server's existing `Play` bidi RPC is unchanged. The browser opens **one grpc-web stream per game** and uses it for the entire session. Because a turn-based game is inherently sequential — the server only sends a `StateUpdate` after the client sends an `Action` — grpc-web's half-duplex constraint is not a problem. The loop is: `send initial join Action → recv StateUpdate → call onStateUpdate → send Action → recv StateUpdate → …` The grpc-web library handles framing over HTTP/1.1 or HTTP/2 via an Envoy proxy. All of this is hidden inside `run()`.
+
+The package also bundles `ReplayPlayer` and `fetchGlog` as standalone utility exports for post-game replay visualisation (retained from the previous implementation).
 
 ### 11.1 Project Setup
-- [x] Create `clients/ts-web/package.json` — name `game-engine-core-web`, version `0.1.0`, `main: "dist/index.js"`, `types: "dist/index.d.ts"`
-- [x] Add dependencies: `grpc-web`, `google-protobuf`; add dev dependencies: `typescript`, `ts-proto`, `webpack` (or `vite`), `jest`, `ts-jest`
-- [x] Create `clients/ts-web/tsconfig.json` targeting `ES2020`, `lib: ["ES2020", "DOM"]`, `strict: true`, output to `dist/`
-- [x] Add a `Makefile` target `proto-ts-web` that compiles `api/proto/*.proto` into `clients/ts-web/src/proto/` using `ts-proto` in `grpc-web` mode (unary + server-streaming only — no bidi in browsers)
+- [x] Update `clients/ts-web/package.json` — name `game-engine-core-web`, version `0.1.0`, `main: "dist/index.js"`, `types: "dist/index.d.ts"`
+- [x] Add runtime dependency: `grpc-web`; update dev dependencies to include `ts-proto` (grpc-web mode), `typescript`, `jest`, `ts-jest`, `jest-environment-jsdom`
+- [x] Ensure `clients/ts-web/tsconfig.json` targets `ES2020`, `lib: ["ES2020", "DOM"]`, `strict: true`, output to `dist/`
+- [x] Update the `proto-ts-web` npm script to compile `api/proto/*.proto` using `ts-proto` with `env=browser,outputServices=grpc-js,esModuleInterop=true` — this produces grpc-web-compatible service stubs with a `play()` method that returns a bidi-capable stream object usable from the browser
 - [x] Add `.nvmrc` pinning Node `20 LTS`
-- [x] Add `build`, `test`, `proto` npm scripts to `package.json`
+- [x] Ensure `build`, `test`, `proto`, `clean` npm scripts are present
 
 ### 11.2 `GameWebClient` Base Class (`src/client.ts`)
-- [x] Define `GameWebClient` class with `constructor(serverUrl: string, playerId: string)` using a `grpc-web` client
-- [x] Note: browsers do not support bidi streaming — implement a **polling / server-streaming** model: `watchSession(sessionId: string): void` that subscribes to `StateUpdate` events via `GetReplay` stream or a dedicated watch RPC
-- [x] Implement `onStateUpdate(state: StateUpdate): void` as the override point (web clients observe state; actions are submitted via a separate unary `SubmitAction` call if a suitable RPC exists, or noted as out-of-scope)
-- [x] Export `GameWebClient`, `StateUpdate` from `src/index.ts`
+- [x] Define `abstract class GameWebClient` with `constructor(serverUrl: string, playerId: string)` — identical signature to `ts-node`'s `GameClient`
+- [x] Add protected `createMatchmakingClient()` and `createGameSessionClient()` factory methods (same overridable pattern as ts-node) so tests can inject `FakeReadStream` / `FakeDuplexStream` EventEmitter fakes without monkey-patching
+- [x] Implement `async joinLobby(gameType: string): Promise<string>` — calls `Matchmaking.JoinLobby` via the grpc-web stub; listens for `LobbyStatusUpdate` events on the server-streaming response; resolves with `sessionId` when `gameStarting === true`; rejects on stream error or stream-end without `game_starting`
+- [x] Implement `async run(): Promise<void>` — opens **one** `GameSession.Play` bidi stream for the entire game; sends the initial join `Action` (stamped `actorId: this.playerId`); then loops: `await` the next `StateUpdate` from the stream; if `isTerminal` resolve; otherwise call `await onStateUpdate(update)`, stamp the returned `Action` with `actorId`, send it; repeat. Rejects on stream error.
+- [x] Define `abstract onStateUpdate(update: StateUpdate): Action | Promise<Action>` — the single override point; signature **identical** to `ts-node` so bots can be ported with a one-line import change
+- [x] Implement `close(): void` — tears down both stubs; safe to call before `joinLobby` / `run`
+- [x] Export `GameWebClient`, `Action`, `StateUpdate` from `src/index.ts`
 
 ### 11.3 Helper Utilities
-- [x] Add `src/state.ts` with `RichState` interface and `parseRichState` helper (same shape as ts-node)
-- [x] Add `src/replay.ts` with `ReplayPlayer` class that reads a `.glog` (fetched as JSON-L text) and emits entries at configurable speed — useful for post-game visualization
+- [x] Keep `src/replay.ts` — `ReplayPlayer` unchanged (play/stop/onEntry/onComplete/fromJsonLines)
+- [x] Keep `src/fetcher.ts` — `fetchGlog(url): Promise<ReplayPlayer>` via browser Fetch API
+- [x] Add `src/state.ts` — `RichState` interface and `parseRichState(update: StateUpdate): RichState` helper; same shape as ts-node so UI code is portable
+- [x] Re-export all public symbols from `src/index.ts`: `GameWebClient`, `Action`, `StateUpdate`, `ReplayPlayer`, `fetchGlog`, `RichState`, `parseRichState`
 
 ### 11.4 Tests
-- [x] Write `tests/client.test.ts` using `jest` with `jsdom` environment — mock `grpc-web` transport and confirm `onStateUpdate` is called for each emitted `StateUpdate`
-- [x] Write tests for `ReplayPlayer` — confirm entries are emitted in order and `stop()` halts playback
-- [x] Confirm `npm test` passes with zero failures
+- [x] Write `src/client.test.ts` using jest + jsdom, mirroring the ts-node test structure exactly: `FakeDuplexStream` and `FakeReadStream` EventEmitter helpers; `TestGameWebClient` concrete subclass that overrides the factory methods
+- [x] Test `joinLobby`: resolves with `sessionId` on `gameStarting=true`; rejects on stream error; rejects when stream ends without `game_starting`
+- [x] Test `run`: `onStateUpdate` called for each non-terminal update and the returned `Action` (with `actorId` stamped) is sent back; terminal update resolves without calling `onStateUpdate`; async `onStateUpdate` is awaited; stream error rejects; natural stream end resolves
+- [x] Test `close`: safe before `joinLobby`/`run`; calls stub `close()` when stubs exist
+- [x] Keep existing `src/replay.test.ts` and `src/fetcher.test.ts`
+- [x] `npm test` passes with zero failures; `npx tsc --noEmit` is clean
 
-### 11.5 Documentation
-- [x] Add `clients/ts-web/README.md` covering: install, browser compatibility notes, gRPC-Web proxy requirement (Envoy), quickstart observer example
-- [x] Add `clients/ts-web/examples/replayViewer.ts` showing `ReplayPlayer` usage
+### 11.5 Envoy Proxy Setup (not automated — documentation only)
+- [x] Add `docker/envoy.yaml` to `clients/ts-web/` — a minimal Envoy config that enables the `grpc_web` filter and proxies to the Go server on port `50051`
+- [x] Document in `README.md` the one-liner to start the proxy for local dev:
+  ```bash
+  docker run --rm -p 8080:8080 \
+    -v $(pwd)/docker/envoy.yaml:/etc/envoy/envoy.yaml \
+    envoyproxy/envoy:v1.29-latest
+  ```
+- [x] Explain clearly in `README.md`: construct `GameWebClient` with the Envoy address (`http://localhost:8080`), not the raw gRPC port (`50051`); the Go server itself needs no changes
+
+### 11.6 Documentation
+- [x] Rewrite `clients/ts-web/README.md` covering: purpose, the Option A transport strategy (one long-lived stream, why it works for turn-based games, why no server changes are needed), Envoy proxy setup, quickstart showing a minimal `GameWebClient` subclass, **one-line migration note** from ts-node (`import { GameWebClient } from 'game-engine-core-web'` instead of `game-engine-core-node`), `ReplayPlayer`/`fetchGlog` as a separate section
+- [x] Add `clients/ts-web/examples/randomAgent.ts` — minimal `GameWebClient` subclass returning a random `Action`, mirroring `clients/ts-node/examples/randomAgent.ts`
+- [x] Keep `clients/ts-web/examples/replayViewer.ts`
 
 ---
 

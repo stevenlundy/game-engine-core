@@ -14,3 +14,9 @@ if (typeof global.fetch === "undefined") {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (global as any).fetch = () => Promise.reject(new Error("fetch not mocked"));
 }
+
+// jsdom does not include setImmediate — polyfill with a macrotask via setTimeout.
+if (typeof global.setImmediate === "undefined") {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (global as any).setImmediate = (fn: () => void) => setTimeout(fn, 0);
+}
