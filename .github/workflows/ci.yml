@@ -38,8 +38,13 @@ jobs:
 
       - name: Install protoc
         run: |
-          sudo apt-get update -q
-          sudo apt-get install -y protobuf-compiler
+          PB_VERSION=34.1
+          curl -sSL "https://github.com/protocolbuffers/protobuf/releases/download/v${PB_VERSION}/protoc-${PB_VERSION}-linux-x86_64.zip" \
+            -o /tmp/protoc.zip
+          unzip -q /tmp/protoc.zip -d /tmp/protoc
+          sudo mv /tmp/protoc/bin/protoc /usr/local/bin/protoc
+          sudo mv /tmp/protoc/include/* /usr/local/include/
+          protoc --version
           go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
           go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 
