@@ -1,4 +1,4 @@
-import { StateUpdate } from "./proto/common.js";
+import type { StateUpdate } from "./proto/common.js";
 
 export type { StateUpdate };
 
@@ -9,8 +9,7 @@ export interface RichState {
   /** Raw StateUpdate received from the server. */
   raw: StateUpdate;
   /** Game-specific state parsed from state.payload as a JSON object. */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  gameState: Record<string, any> | null;
+  gameState: Record<string, unknown> | null;
   /** Opaque game id (e.g. session identifier). */
   gameId: string;
   /** Monotonically increasing step counter. */
@@ -31,7 +30,9 @@ export function parseRichState(update: StateUpdate): RichState {
   let gameState: Record<string, unknown> | null = null;
   if (update.state?.payload && update.state.payload.length > 0) {
     try {
-      gameState = JSON.parse(Buffer.from(update.state.payload).toString("utf8")) as Record<string, unknown>;
+      gameState = JSON.parse(
+        Buffer.from(update.state.payload).toString("utf8"),
+      ) as Record<string, unknown>;
     } catch {
       gameState = null;
     }

@@ -1,8 +1,8 @@
 import { EventEmitter } from "events";
 import { GameWebClient } from "./client";
-import { Action, StateUpdate } from "./proto/common";
-import { MatchmakingClient } from "./proto/matchmaking";
-import { GameSessionClient } from "./proto/gamesession";
+import type { Action, StateUpdate } from "./proto/common";
+import type { GameSessionClient } from "./proto/gamesession";
+import type { MatchmakingClient } from "./proto/matchmaking";
 
 // ---------------------------------------------------------------------------
 // Minimal fake duplex stream helper
@@ -44,7 +44,8 @@ type OnStateUpdateFn = (state: StateUpdate) => Action | Promise<Action>;
 
 class TestGameWebClient extends GameWebClient {
   private _onStateUpdateFn: OnStateUpdateFn;
-  public mockMatchmaking: { joinLobby: jest.Mock; close: jest.Mock } | null = null;
+  public mockMatchmaking: { joinLobby: jest.Mock; close: jest.Mock } | null =
+    null;
   public mockSession: { play: jest.Mock; close: jest.Mock } | null = null;
 
   constructor(onStateUpdateFn: OnStateUpdateFn) {
@@ -108,9 +109,17 @@ describe("GameWebClient.joinLobby", () => {
     const promise = client.joinLobby("card-game");
 
     // Emit a non-final update first
-    lobbyStream.emit("data", { sessionId: "sess-1", readyPlayers: [], gameStarting: false });
+    lobbyStream.emit("data", {
+      sessionId: "sess-1",
+      readyPlayers: [],
+      gameStarting: false,
+    });
     // Then the final one
-    lobbyStream.emit("data", { sessionId: "sess-42", readyPlayers: ["player-1"], gameStarting: true });
+    lobbyStream.emit("data", {
+      sessionId: "sess-42",
+      readyPlayers: ["player-1"],
+      gameStarting: true,
+    });
 
     await expect(promise).resolves.toBe("sess-42");
   });
@@ -158,8 +167,12 @@ describe("GameWebClient.run", () => {
     const runPromise = client.run();
 
     // Emit two normal updates then a terminal one
-    const update1 = makeStateUpdate({ state: { payload: Buffer.from("{}"), gameId: "g", stepIndex: 1 } });
-    const update2 = makeStateUpdate({ state: { payload: Buffer.from("{}"), gameId: "g", stepIndex: 2 } });
+    const update1 = makeStateUpdate({
+      state: { payload: Buffer.from("{}"), gameId: "g", stepIndex: 1 },
+    });
+    const update2 = makeStateUpdate({
+      state: { payload: Buffer.from("{}"), gameId: "g", stepIndex: 2 },
+    });
     const terminal = makeStateUpdate({ isTerminal: true });
 
     playStream.emit("data", update1);
@@ -176,7 +189,7 @@ describe("GameWebClient.run", () => {
     // Two actions written back
     expect(playStream.written).toHaveLength(2);
     // Actor id is stamped
-    expect(playStream.written[0].actorId).toBe("player-1");
+    expect(playStream.written[0]?.actorId).toBe("player-1");
   });
 
   it("resolves immediately on the first terminal update (no onStateUpdate call)", async () => {

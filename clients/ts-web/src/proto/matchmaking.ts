@@ -9,14 +9,14 @@ import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import {
   type CallOptions,
   type ChannelCredentials,
-  Client,
+  type Client,
   type ClientOptions,
   type ClientReadableStream,
   type ClientUnaryCall,
   type handleServerStreamingCall,
   type handleUnaryCall,
-  makeGenericClientConstructor,
   type Metadata,
+  makeGenericClientConstructor,
   type ServiceError,
   type UntypedServiceImplementation,
 } from "@grpc/grpc-js";
@@ -58,7 +58,10 @@ function createBaseJoinRequest(): JoinRequest {
 }
 
 export const JoinRequest: MessageFns<JoinRequest> = {
-  encode(message: JoinRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+  encode(
+    message: JoinRequest,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
     if (message.playerId !== "") {
       writer.uint32(10).string(message.playerId);
     }
@@ -72,7 +75,8 @@ export const JoinRequest: MessageFns<JoinRequest> = {
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): JoinRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseJoinRequest();
     while (reader.pos < end) {
@@ -116,14 +120,16 @@ export const JoinRequest: MessageFns<JoinRequest> = {
       playerId: isSet(object.playerId)
         ? globalThis.String(object.playerId)
         : isSet(object.player_id)
-        ? globalThis.String(object.player_id)
-        : "",
+          ? globalThis.String(object.player_id)
+          : "",
       gameType: isSet(object.gameType)
         ? globalThis.String(object.gameType)
         : isSet(object.game_type)
-        ? globalThis.String(object.game_type)
-        : "",
-      config: isSet(object.config) ? Buffer.from(bytesFromBase64(object.config)) : Buffer.alloc(0),
+          ? globalThis.String(object.game_type)
+          : "",
+      config: isSet(object.config)
+        ? Buffer.from(bytesFromBase64(object.config))
+        : Buffer.alloc(0),
     };
   },
 
@@ -144,7 +150,9 @@ export const JoinRequest: MessageFns<JoinRequest> = {
   create<I extends Exact<DeepPartial<JoinRequest>, I>>(base?: I): JoinRequest {
     return JoinRequest.fromPartial(base ?? ({} as any));
   },
-  fromPartial<I extends Exact<DeepPartial<JoinRequest>, I>>(object: I): JoinRequest {
+  fromPartial<I extends Exact<DeepPartial<JoinRequest>, I>>(
+    object: I,
+  ): JoinRequest {
     const message = createBaseJoinRequest();
     message.playerId = object.playerId ?? "";
     message.gameType = object.gameType ?? "";
@@ -158,7 +166,10 @@ function createBaseJoinResponse(): JoinResponse {
 }
 
 export const JoinResponse: MessageFns<JoinResponse> = {
-  encode(message: JoinResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+  encode(
+    message: JoinResponse,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
     if (message.sessionId !== "") {
       writer.uint32(10).string(message.sessionId);
     }
@@ -172,7 +183,8 @@ export const JoinResponse: MessageFns<JoinResponse> = {
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): JoinResponse {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseJoinResponse();
     while (reader.pos < end) {
@@ -216,14 +228,14 @@ export const JoinResponse: MessageFns<JoinResponse> = {
       sessionId: isSet(object.sessionId)
         ? globalThis.String(object.sessionId)
         : isSet(object.session_id)
-        ? globalThis.String(object.session_id)
-        : "",
+          ? globalThis.String(object.session_id)
+          : "",
       status: isSet(object.status) ? globalThis.String(object.status) : "",
       playerIds: globalThis.Array.isArray(object?.playerIds)
         ? object.playerIds.map((e: any) => globalThis.String(e))
         : globalThis.Array.isArray(object?.player_ids)
-        ? object.player_ids.map((e: any) => globalThis.String(e))
-        : [],
+          ? object.player_ids.map((e: any) => globalThis.String(e))
+          : [],
     };
   },
 
@@ -241,10 +253,14 @@ export const JoinResponse: MessageFns<JoinResponse> = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<JoinResponse>, I>>(base?: I): JoinResponse {
+  create<I extends Exact<DeepPartial<JoinResponse>, I>>(
+    base?: I,
+  ): JoinResponse {
     return JoinResponse.fromPartial(base ?? ({} as any));
   },
-  fromPartial<I extends Exact<DeepPartial<JoinResponse>, I>>(object: I): JoinResponse {
+  fromPartial<I extends Exact<DeepPartial<JoinResponse>, I>>(
+    object: I,
+  ): JoinResponse {
     const message = createBaseJoinResponse();
     message.sessionId = object.sessionId ?? "";
     message.status = object.status ?? "";
@@ -258,7 +274,10 @@ function createBaseLobbyStatusUpdate(): LobbyStatusUpdate {
 }
 
 export const LobbyStatusUpdate: MessageFns<LobbyStatusUpdate> = {
-  encode(message: LobbyStatusUpdate, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+  encode(
+    message: LobbyStatusUpdate,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
     if (message.sessionId !== "") {
       writer.uint32(10).string(message.sessionId);
     }
@@ -272,7 +291,8 @@ export const LobbyStatusUpdate: MessageFns<LobbyStatusUpdate> = {
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): LobbyStatusUpdate {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseLobbyStatusUpdate();
     while (reader.pos < end) {
@@ -316,18 +336,18 @@ export const LobbyStatusUpdate: MessageFns<LobbyStatusUpdate> = {
       sessionId: isSet(object.sessionId)
         ? globalThis.String(object.sessionId)
         : isSet(object.session_id)
-        ? globalThis.String(object.session_id)
-        : "",
+          ? globalThis.String(object.session_id)
+          : "",
       readyPlayers: globalThis.Array.isArray(object?.readyPlayers)
         ? object.readyPlayers.map((e: any) => globalThis.String(e))
         : globalThis.Array.isArray(object?.ready_players)
-        ? object.ready_players.map((e: any) => globalThis.String(e))
-        : [],
+          ? object.ready_players.map((e: any) => globalThis.String(e))
+          : [],
       gameStarting: isSet(object.gameStarting)
         ? globalThis.Boolean(object.gameStarting)
         : isSet(object.game_starting)
-        ? globalThis.Boolean(object.game_starting)
-        : false,
+          ? globalThis.Boolean(object.game_starting)
+          : false,
     };
   },
 
@@ -345,10 +365,14 @@ export const LobbyStatusUpdate: MessageFns<LobbyStatusUpdate> = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<LobbyStatusUpdate>, I>>(base?: I): LobbyStatusUpdate {
+  create<I extends Exact<DeepPartial<LobbyStatusUpdate>, I>>(
+    base?: I,
+  ): LobbyStatusUpdate {
     return LobbyStatusUpdate.fromPartial(base ?? ({} as any));
   },
-  fromPartial<I extends Exact<DeepPartial<LobbyStatusUpdate>, I>>(object: I): LobbyStatusUpdate {
+  fromPartial<I extends Exact<DeepPartial<LobbyStatusUpdate>, I>>(
+    object: I,
+  ): LobbyStatusUpdate {
     const message = createBaseLobbyStatusUpdate();
     message.sessionId = object.sessionId ?? "";
     message.readyPlayers = object.readyPlayers?.map((e) => e) || [];
@@ -368,20 +392,28 @@ export const MatchmakingService = {
     path: "/gameengine.v1.Matchmaking/JoinLobby" as const,
     requestStream: false as const,
     responseStream: true as const,
-    requestSerialize: (value: JoinRequest): Buffer => Buffer.from(JoinRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): JoinRequest => JoinRequest.decode(value),
-    responseSerialize: (value: LobbyStatusUpdate): Buffer => Buffer.from(LobbyStatusUpdate.encode(value).finish()),
-    responseDeserialize: (value: Buffer): LobbyStatusUpdate => LobbyStatusUpdate.decode(value),
+    requestSerialize: (value: JoinRequest): Buffer =>
+      Buffer.from(JoinRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): JoinRequest =>
+      JoinRequest.decode(value),
+    responseSerialize: (value: LobbyStatusUpdate): Buffer =>
+      Buffer.from(LobbyStatusUpdate.encode(value).finish()),
+    responseDeserialize: (value: Buffer): LobbyStatusUpdate =>
+      LobbyStatusUpdate.decode(value),
   },
   /** CancelJoin removes a waiting player from the lobby. */
   cancelJoin: {
     path: "/gameengine.v1.Matchmaking/CancelJoin" as const,
     requestStream: false as const,
     responseStream: false as const,
-    requestSerialize: (value: JoinRequest): Buffer => Buffer.from(JoinRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): JoinRequest => JoinRequest.decode(value),
-    responseSerialize: (value: JoinResponse): Buffer => Buffer.from(JoinResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): JoinResponse => JoinResponse.decode(value),
+    requestSerialize: (value: JoinRequest): Buffer =>
+      Buffer.from(JoinRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): JoinRequest =>
+      JoinRequest.decode(value),
+    responseSerialize: (value: JoinResponse): Buffer =>
+      Buffer.from(JoinResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): JoinResponse =>
+      JoinResponse.decode(value),
   },
 } as const;
 
@@ -400,7 +432,10 @@ export interface MatchmakingClient extends Client {
    * JoinLobby places the player in a lobby and streams status updates until the
    * game starts or the request is cancelled.
    */
-  joinLobby(request: JoinRequest, options?: Partial<CallOptions>): ClientReadableStream<LobbyStatusUpdate>;
+  joinLobby(
+    request: JoinRequest,
+    options?: Partial<CallOptions>,
+  ): ClientReadableStream<LobbyStatusUpdate>;
   joinLobby(
     request: JoinRequest,
     metadata?: Metadata,
@@ -428,7 +463,11 @@ export const MatchmakingClient = makeGenericClientConstructor(
   MatchmakingService,
   "gameengine.v1.Matchmaking",
 ) as unknown as {
-  new (address: string, credentials: ChannelCredentials, options?: Partial<ClientOptions>): MatchmakingClient;
+  new (
+    address: string,
+    credentials: ChannelCredentials,
+    options?: Partial<ClientOptions>,
+  ): MatchmakingClient;
   service: typeof MatchmakingService;
   serviceName: string;
 };
@@ -441,17 +480,31 @@ function base64FromBytes(arr: Uint8Array): string {
   return globalThis.Buffer.from(arr).toString("base64");
 }
 
-type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;
+type Builtin =
+  | Date
+  | Function
+  | Uint8Array
+  | string
+  | number
+  | boolean
+  | undefined;
 
-export type DeepPartial<T> = T extends Builtin ? T
-  : T extends globalThis.Array<infer U> ? globalThis.Array<DeepPartial<U>>
-  : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
-  : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
-  : Partial<T>;
+export type DeepPartial<T> = T extends Builtin
+  ? T
+  : T extends globalThis.Array<infer U>
+    ? globalThis.Array<DeepPartial<U>>
+    : T extends ReadonlyArray<infer U>
+      ? ReadonlyArray<DeepPartial<U>>
+      : T extends {}
+        ? { [K in keyof T]?: DeepPartial<T[K]> }
+        : Partial<T>;
 
 type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
+export type Exact<P, I extends P> = P extends Builtin
+  ? P
+  : P & { [K in keyof P]: Exact<P[K], I[K]> } & {
+      [K in Exclude<keyof I, KeysOfUnion<P>>]: never;
+    };
 
 function isSet(value: any): boolean {
   return value !== null && value !== undefined;

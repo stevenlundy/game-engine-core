@@ -1,4 +1,4 @@
-import { ReplayEntry } from "./proto/gamesession";
+import type { ReplayEntry } from "./proto/gamesession";
 
 /**
  * ReplayPlayer plays back a sequence of ReplayEntry objects, emitting each
@@ -39,7 +39,9 @@ export class ReplayPlayer {
       }
 
       const entry = this.entries[index];
-      this.onEntry?.(entry, index);
+      if (entry !== undefined) {
+        this.onEntry?.(entry, index);
+      }
       index++;
 
       if (index < this.entries.length) {

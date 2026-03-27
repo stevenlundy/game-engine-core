@@ -20,11 +20,11 @@
  *   })
  */
 
+import { type ChildProcess, execFileSync, spawn } from "child_process";
 import * as fs from "fs";
 import * as net from "net";
 import * as os from "os";
 import * as path from "path";
-import { execFileSync, spawn, type ChildProcess } from "child_process";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -76,7 +76,7 @@ function findRepoRoot(startDir?: string): string {
       return envRoot;
     }
     throw new Error(
-      `GAME_ENGINE_CORE_ROOT=${envRoot} does not contain a go.mod`
+      `GAME_ENGINE_CORE_ROOT=${envRoot} does not contain a go.mod`,
     );
   }
 
@@ -97,7 +97,7 @@ function findRepoRoot(startDir?: string): string {
 
   throw new Error(
     "Cannot find game-engine-core repo root. " +
-      "Set the GAME_ENGINE_CORE_ROOT environment variable to the repo path."
+      "Set the GAME_ENGINE_CORE_ROOT environment variable to the repo path.",
   );
 }
 
@@ -128,8 +128,8 @@ function waitForPort(port: number, timeoutMs = 10_000): Promise<void> {
       if (Date.now() > deadline) {
         reject(
           new Error(
-            `Test server did not start on port ${port} within ${timeoutMs}ms`
-          )
+            `Test server did not start on port ${port} within ${timeoutMs}ms`,
+          ),
         );
         return;
       }
@@ -171,7 +171,7 @@ export function buildTestServer(repoRoot?: string): string {
 
   const root = repoRoot ?? findRepoRoot();
   const tmpDir = fs.mkdtempSync(
-    path.join(os.tmpdir(), "game-engine-core-testserver-")
+    path.join(os.tmpdir(), "game-engine-core-testserver-"),
   );
   const binary = path.join(tmpDir, "testserver");
 
@@ -196,7 +196,9 @@ export function buildTestServer(repoRoot?: string): string {
  * @param opts  Optional configuration; all fields have sensible defaults.
  * @returns     A `ServerInfo` describing the running server.
  */
-export async function startTestServer(opts: StartOptions = {}): Promise<ServerInfo> {
+export async function startTestServer(
+  opts: StartOptions = {},
+): Promise<ServerInfo> {
   const {
     repoRoot,
     gameType = "countdown",
@@ -267,7 +269,7 @@ export function stopTestServer(info: ServerInfo): void {
  */
 export async function withTestServer<T>(
   opts: StartOptions,
-  fn: (info: ServerInfo) => Promise<T>
+  fn: (info: ServerInfo) => Promise<T>,
 ): Promise<T> {
   const info = await startTestServer(opts);
   try {

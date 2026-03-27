@@ -9,14 +9,14 @@ import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import {
   type CallOptions,
   type ChannelCredentials,
-  Client,
+  type Client,
   type ClientDuplexStream,
   type ClientOptions,
   type ClientReadableStream,
   type handleBidiStreamingCall,
   type handleServerStreamingCall,
-  makeGenericClientConstructor,
   type Metadata,
+  makeGenericClientConstructor,
   type UntypedServiceImplementation,
 } from "@grpc/grpc-js";
 import { Action, StateUpdate } from "./common";
@@ -76,7 +76,10 @@ function createBaseStartSessionRequest(): StartSessionRequest {
 }
 
 export const StartSessionRequest: MessageFns<StartSessionRequest> = {
-  encode(message: StartSessionRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+  encode(
+    message: StartSessionRequest,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
     if (message.sessionId !== "") {
       writer.uint32(10).string(message.sessionId);
     }
@@ -89,8 +92,12 @@ export const StartSessionRequest: MessageFns<StartSessionRequest> = {
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): StartSessionRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+  decode(
+    input: BinaryReader | Uint8Array,
+    length?: number,
+  ): StartSessionRequest {
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseStartSessionRequest();
     while (reader.pos < end) {
@@ -134,18 +141,18 @@ export const StartSessionRequest: MessageFns<StartSessionRequest> = {
       sessionId: isSet(object.sessionId)
         ? globalThis.String(object.sessionId)
         : isSet(object.session_id)
-        ? globalThis.String(object.session_id)
-        : "",
+          ? globalThis.String(object.session_id)
+          : "",
       playerId: isSet(object.playerId)
         ? globalThis.String(object.playerId)
         : isSet(object.player_id)
-        ? globalThis.String(object.player_id)
-        : "",
+          ? globalThis.String(object.player_id)
+          : "",
       initialConfig: isSet(object.initialConfig)
         ? Buffer.from(bytesFromBase64(object.initialConfig))
         : isSet(object.initial_config)
-        ? Buffer.from(bytesFromBase64(object.initial_config))
-        : Buffer.alloc(0),
+          ? Buffer.from(bytesFromBase64(object.initial_config))
+          : Buffer.alloc(0),
     };
   },
 
@@ -163,10 +170,14 @@ export const StartSessionRequest: MessageFns<StartSessionRequest> = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<StartSessionRequest>, I>>(base?: I): StartSessionRequest {
+  create<I extends Exact<DeepPartial<StartSessionRequest>, I>>(
+    base?: I,
+  ): StartSessionRequest {
     return StartSessionRequest.fromPartial(base ?? ({} as any));
   },
-  fromPartial<I extends Exact<DeepPartial<StartSessionRequest>, I>>(object: I): StartSessionRequest {
+  fromPartial<I extends Exact<DeepPartial<StartSessionRequest>, I>>(
+    object: I,
+  ): StartSessionRequest {
     const message = createBaseStartSessionRequest();
     message.sessionId = object.sessionId ?? "";
     message.playerId = object.playerId ?? "";
@@ -180,7 +191,10 @@ function createBaseEndSessionRequest(): EndSessionRequest {
 }
 
 export const EndSessionRequest: MessageFns<EndSessionRequest> = {
-  encode(message: EndSessionRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+  encode(
+    message: EndSessionRequest,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
     if (message.sessionId !== "") {
       writer.uint32(10).string(message.sessionId);
     }
@@ -191,7 +205,8 @@ export const EndSessionRequest: MessageFns<EndSessionRequest> = {
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): EndSessionRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseEndSessionRequest();
     while (reader.pos < end) {
@@ -227,8 +242,8 @@ export const EndSessionRequest: MessageFns<EndSessionRequest> = {
       sessionId: isSet(object.sessionId)
         ? globalThis.String(object.sessionId)
         : isSet(object.session_id)
-        ? globalThis.String(object.session_id)
-        : "",
+          ? globalThis.String(object.session_id)
+          : "",
       reason: isSet(object.reason) ? globalThis.String(object.reason) : "",
     };
   },
@@ -244,10 +259,14 @@ export const EndSessionRequest: MessageFns<EndSessionRequest> = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<EndSessionRequest>, I>>(base?: I): EndSessionRequest {
+  create<I extends Exact<DeepPartial<EndSessionRequest>, I>>(
+    base?: I,
+  ): EndSessionRequest {
     return EndSessionRequest.fromPartial(base ?? ({} as any));
   },
-  fromPartial<I extends Exact<DeepPartial<EndSessionRequest>, I>>(object: I): EndSessionRequest {
+  fromPartial<I extends Exact<DeepPartial<EndSessionRequest>, I>>(
+    object: I,
+  ): EndSessionRequest {
     const message = createBaseEndSessionRequest();
     message.sessionId = object.sessionId ?? "";
     message.reason = object.reason ?? "";
@@ -260,7 +279,10 @@ function createBaseEndSessionResponse(): EndSessionResponse {
 }
 
 export const EndSessionResponse: MessageFns<EndSessionResponse> = {
-  encode(message: EndSessionResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+  encode(
+    message: EndSessionResponse,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
     if (message.sessionId !== "") {
       writer.uint32(10).string(message.sessionId);
     }
@@ -270,8 +292,12 @@ export const EndSessionResponse: MessageFns<EndSessionResponse> = {
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): EndSessionResponse {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+  decode(
+    input: BinaryReader | Uint8Array,
+    length?: number,
+  ): EndSessionResponse {
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseEndSessionResponse();
     while (reader.pos < end) {
@@ -307,8 +333,8 @@ export const EndSessionResponse: MessageFns<EndSessionResponse> = {
       sessionId: isSet(object.sessionId)
         ? globalThis.String(object.sessionId)
         : isSet(object.session_id)
-        ? globalThis.String(object.session_id)
-        : "",
+          ? globalThis.String(object.session_id)
+          : "",
       reason: isSet(object.reason) ? globalThis.String(object.reason) : "",
     };
   },
@@ -324,10 +350,14 @@ export const EndSessionResponse: MessageFns<EndSessionResponse> = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<EndSessionResponse>, I>>(base?: I): EndSessionResponse {
+  create<I extends Exact<DeepPartial<EndSessionResponse>, I>>(
+    base?: I,
+  ): EndSessionResponse {
     return EndSessionResponse.fromPartial(base ?? ({} as any));
   },
-  fromPartial<I extends Exact<DeepPartial<EndSessionResponse>, I>>(object: I): EndSessionResponse {
+  fromPartial<I extends Exact<DeepPartial<EndSessionResponse>, I>>(
+    object: I,
+  ): EndSessionResponse {
     const message = createBaseEndSessionResponse();
     message.sessionId = object.sessionId ?? "";
     message.reason = object.reason ?? "";
@@ -340,7 +370,10 @@ function createBaseGetReplayRequest(): GetReplayRequest {
 }
 
 export const GetReplayRequest: MessageFns<GetReplayRequest> = {
-  encode(message: GetReplayRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+  encode(
+    message: GetReplayRequest,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
     if (message.sessionId !== "") {
       writer.uint32(10).string(message.sessionId);
     }
@@ -348,7 +381,8 @@ export const GetReplayRequest: MessageFns<GetReplayRequest> = {
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): GetReplayRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseGetReplayRequest();
     while (reader.pos < end) {
@@ -376,8 +410,8 @@ export const GetReplayRequest: MessageFns<GetReplayRequest> = {
       sessionId: isSet(object.sessionId)
         ? globalThis.String(object.sessionId)
         : isSet(object.session_id)
-        ? globalThis.String(object.session_id)
-        : "",
+          ? globalThis.String(object.session_id)
+          : "",
     };
   },
 
@@ -389,10 +423,14 @@ export const GetReplayRequest: MessageFns<GetReplayRequest> = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<GetReplayRequest>, I>>(base?: I): GetReplayRequest {
+  create<I extends Exact<DeepPartial<GetReplayRequest>, I>>(
+    base?: I,
+  ): GetReplayRequest {
     return GetReplayRequest.fromPartial(base ?? ({} as any));
   },
-  fromPartial<I extends Exact<DeepPartial<GetReplayRequest>, I>>(object: I): GetReplayRequest {
+  fromPartial<I extends Exact<DeepPartial<GetReplayRequest>, I>>(
+    object: I,
+  ): GetReplayRequest {
     const message = createBaseGetReplayRequest();
     message.sessionId = object.sessionId ?? "";
     return message;
@@ -411,7 +449,10 @@ function createBaseReplayEntry(): ReplayEntry {
 }
 
 export const ReplayEntry: MessageFns<ReplayEntry> = {
-  encode(message: ReplayEntry, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+  encode(
+    message: ReplayEntry,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
     if (message.stepIndex !== 0) {
       writer.uint32(8).int32(message.stepIndex);
     }
@@ -434,7 +475,8 @@ export const ReplayEntry: MessageFns<ReplayEntry> = {
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): ReplayEntry {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseReplayEntry();
     while (reader.pos < end) {
@@ -502,33 +544,33 @@ export const ReplayEntry: MessageFns<ReplayEntry> = {
       stepIndex: isSet(object.stepIndex)
         ? globalThis.Number(object.stepIndex)
         : isSet(object.step_index)
-        ? globalThis.Number(object.step_index)
-        : 0,
+          ? globalThis.Number(object.step_index)
+          : 0,
       actorId: isSet(object.actorId)
         ? globalThis.String(object.actorId)
         : isSet(object.actor_id)
-        ? globalThis.String(object.actor_id)
-        : "",
+          ? globalThis.String(object.actor_id)
+          : "",
       actionTaken: isSet(object.actionTaken)
         ? Buffer.from(bytesFromBase64(object.actionTaken))
         : isSet(object.action_taken)
-        ? Buffer.from(bytesFromBase64(object.action_taken))
-        : Buffer.alloc(0),
+          ? Buffer.from(bytesFromBase64(object.action_taken))
+          : Buffer.alloc(0),
       stateSnapshot: isSet(object.stateSnapshot)
         ? Buffer.from(bytesFromBase64(object.stateSnapshot))
         : isSet(object.state_snapshot)
-        ? Buffer.from(bytesFromBase64(object.state_snapshot))
-        : Buffer.alloc(0),
+          ? Buffer.from(bytesFromBase64(object.state_snapshot))
+          : Buffer.alloc(0),
       rewardDelta: isSet(object.rewardDelta)
         ? globalThis.Number(object.rewardDelta)
         : isSet(object.reward_delta)
-        ? globalThis.Number(object.reward_delta)
-        : 0,
+          ? globalThis.Number(object.reward_delta)
+          : 0,
       isTerminal: isSet(object.isTerminal)
         ? globalThis.Boolean(object.isTerminal)
         : isSet(object.is_terminal)
-        ? globalThis.Boolean(object.is_terminal)
-        : false,
+          ? globalThis.Boolean(object.is_terminal)
+          : false,
     };
   },
 
@@ -558,7 +600,9 @@ export const ReplayEntry: MessageFns<ReplayEntry> = {
   create<I extends Exact<DeepPartial<ReplayEntry>, I>>(base?: I): ReplayEntry {
     return ReplayEntry.fromPartial(base ?? ({} as any));
   },
-  fromPartial<I extends Exact<DeepPartial<ReplayEntry>, I>>(object: I): ReplayEntry {
+  fromPartial<I extends Exact<DeepPartial<ReplayEntry>, I>>(
+    object: I,
+  ): ReplayEntry {
     const message = createBaseReplayEntry();
     message.stepIndex = object.stepIndex ?? 0;
     message.actorId = object.actorId ?? "";
@@ -584,10 +628,13 @@ export const GameSessionService = {
     path: "/gameengine.v1.GameSession/Play" as const,
     requestStream: true as const,
     responseStream: true as const,
-    requestSerialize: (value: Action): Buffer => Buffer.from(Action.encode(value).finish()),
+    requestSerialize: (value: Action): Buffer =>
+      Buffer.from(Action.encode(value).finish()),
     requestDeserialize: (value: Buffer): Action => Action.decode(value),
-    responseSerialize: (value: StateUpdate): Buffer => Buffer.from(StateUpdate.encode(value).finish()),
-    responseDeserialize: (value: Buffer): StateUpdate => StateUpdate.decode(value),
+    responseSerialize: (value: StateUpdate): Buffer =>
+      Buffer.from(StateUpdate.encode(value).finish()),
+    responseDeserialize: (value: Buffer): StateUpdate =>
+      StateUpdate.decode(value),
   },
   /**
    * GetReplay streams all ReplayEntry records for a completed session,
@@ -597,10 +644,14 @@ export const GameSessionService = {
     path: "/gameengine.v1.GameSession/GetReplay" as const,
     requestStream: false as const,
     responseStream: true as const,
-    requestSerialize: (value: GetReplayRequest): Buffer => Buffer.from(GetReplayRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): GetReplayRequest => GetReplayRequest.decode(value),
-    responseSerialize: (value: ReplayEntry): Buffer => Buffer.from(ReplayEntry.encode(value).finish()),
-    responseDeserialize: (value: Buffer): ReplayEntry => ReplayEntry.decode(value),
+    requestSerialize: (value: GetReplayRequest): Buffer =>
+      Buffer.from(GetReplayRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): GetReplayRequest =>
+      GetReplayRequest.decode(value),
+    responseSerialize: (value: ReplayEntry): Buffer =>
+      Buffer.from(ReplayEntry.encode(value).finish()),
+    responseDeserialize: (value: Buffer): ReplayEntry =>
+      ReplayEntry.decode(value),
   },
 } as const;
 
@@ -624,12 +675,18 @@ export interface GameSessionClient extends Client {
    */
   play(): ClientDuplexStream<Action, StateUpdate>;
   play(options: Partial<CallOptions>): ClientDuplexStream<Action, StateUpdate>;
-  play(metadata: Metadata, options?: Partial<CallOptions>): ClientDuplexStream<Action, StateUpdate>;
+  play(
+    metadata: Metadata,
+    options?: Partial<CallOptions>,
+  ): ClientDuplexStream<Action, StateUpdate>;
   /**
    * GetReplay streams all ReplayEntry records for a completed session,
    * allowing clients to reconstruct the full game history from .glog data.
    */
-  getReplay(request: GetReplayRequest, options?: Partial<CallOptions>): ClientReadableStream<ReplayEntry>;
+  getReplay(
+    request: GetReplayRequest,
+    options?: Partial<CallOptions>,
+  ): ClientReadableStream<ReplayEntry>;
   getReplay(
     request: GetReplayRequest,
     metadata?: Metadata,
@@ -641,7 +698,11 @@ export const GameSessionClient = makeGenericClientConstructor(
   GameSessionService,
   "gameengine.v1.GameSession",
 ) as unknown as {
-  new (address: string, credentials: ChannelCredentials, options?: Partial<ClientOptions>): GameSessionClient;
+  new (
+    address: string,
+    credentials: ChannelCredentials,
+    options?: Partial<ClientOptions>,
+  ): GameSessionClient;
   service: typeof GameSessionService;
   serviceName: string;
 };
@@ -654,17 +715,31 @@ function base64FromBytes(arr: Uint8Array): string {
   return globalThis.Buffer.from(arr).toString("base64");
 }
 
-type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;
+type Builtin =
+  | Date
+  | Function
+  | Uint8Array
+  | string
+  | number
+  | boolean
+  | undefined;
 
-export type DeepPartial<T> = T extends Builtin ? T
-  : T extends globalThis.Array<infer U> ? globalThis.Array<DeepPartial<U>>
-  : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
-  : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
-  : Partial<T>;
+export type DeepPartial<T> = T extends Builtin
+  ? T
+  : T extends globalThis.Array<infer U>
+    ? globalThis.Array<DeepPartial<U>>
+    : T extends ReadonlyArray<infer U>
+      ? ReadonlyArray<DeepPartial<U>>
+      : T extends {}
+        ? { [K in keyof T]?: DeepPartial<T[K]> }
+        : Partial<T>;
 
 type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
+export type Exact<P, I extends P> = P extends Builtin
+  ? P
+  : P & { [K in keyof P]: Exact<P[K], I[K]> } & {
+      [K in Exclude<keyof I, KeysOfUnion<P>>]: never;
+    };
 
 function isSet(value: any): boolean {
   return value !== null && value !== undefined;

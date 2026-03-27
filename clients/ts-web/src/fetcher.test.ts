@@ -39,9 +39,7 @@ describe("fetchGlog", () => {
   });
 
   it("returns a ReplayPlayer populated with parsed entries on success", async () => {
-    jest
-      .spyOn(global, "fetch")
-      .mockResolvedValue(makeResponse(SAMPLE_GLOG));
+    jest.spyOn(global, "fetch").mockResolvedValue(makeResponse(SAMPLE_GLOG));
 
     const player = await fetchGlog("https://example.com/session.glog");
 
@@ -66,7 +64,9 @@ describe("fetchGlog", () => {
     await fetchGlog("https://cdn.example.com/replays/abc.glog");
 
     expect(spy).toHaveBeenCalledTimes(1);
-    expect(spy).toHaveBeenCalledWith("https://cdn.example.com/replays/abc.glog");
+    expect(spy).toHaveBeenCalledWith(
+      "https://cdn.example.com/replays/abc.glog",
+    );
   });
 
   it("throws an error when the response status is not OK", async () => {
@@ -74,9 +74,9 @@ describe("fetchGlog", () => {
       .spyOn(global, "fetch")
       .mockResolvedValue(makeResponse("Not Found", false, 404));
 
-    await expect(
-      fetchGlog("https://example.com/missing.glog")
-    ).rejects.toThrow("fetchGlog: request failed with status 404 Not Found");
+    await expect(fetchGlog("https://example.com/missing.glog")).rejects.toThrow(
+      "fetchGlog: request failed with status 404 Not Found",
+    );
   });
 
   it("throws when fetch itself rejects (network error)", async () => {
@@ -85,7 +85,7 @@ describe("fetchGlog", () => {
       .mockRejectedValue(new TypeError("Failed to fetch"));
 
     await expect(fetchGlog("https://example.com/session.glog")).rejects.toThrow(
-      "Failed to fetch"
+      "Failed to fetch",
     );
   });
 });

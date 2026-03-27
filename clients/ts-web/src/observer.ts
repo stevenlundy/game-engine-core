@@ -13,7 +13,7 @@
  */
 
 // Re-export the generated proto types so consumers can import from one place.
-export type { StateUpdate, State } from "./proto/common";
+export type { State, StateUpdate } from "./proto/common";
 
 /**
  * Attempt to decode a state snapshot payload.
@@ -28,7 +28,7 @@ export type { StateUpdate, State } from "./proto/common";
  * @returns A plain JavaScript object representing the decoded state.
  */
 export function parseStateSnapshot(
-  payload: Uint8Array | string
+  payload: Uint8Array | string,
 ): Record<string, unknown> {
   let jsonText: string;
 

@@ -1,9 +1,9 @@
 import { EventEmitter } from "events";
-import { GameClient } from "./client.js";
-import { Action, StateUpdate } from "./proto/common.js";
-import { MatchmakingClient } from "./proto/matchmaking.js";
-import { GameSessionClient } from "./proto/gamesession.js";
 import { drawCard } from "./actions.js";
+import { GameClient } from "./client.js";
+import type { Action, StateUpdate } from "./proto/common.js";
+import type { GameSessionClient } from "./proto/gamesession.js";
+import type { MatchmakingClient } from "./proto/matchmaking.js";
 
 // ---------------------------------------------------------------------------
 // Minimal fake duplex stream helper
@@ -45,7 +45,8 @@ type OnStateUpdateFn = (state: StateUpdate) => Action | Promise<Action>;
 
 class TestClient extends GameClient {
   private _onStateUpdateFn: OnStateUpdateFn;
-  public mockMatchmaking: { joinLobby: jest.Mock; close: jest.Mock } | null = null;
+  public mockMatchmaking: { joinLobby: jest.Mock; close: jest.Mock } | null =
+    null;
   public mockSession: { play: jest.Mock; close: jest.Mock } | null = null;
 
   constructor(onStateUpdateFn: OnStateUpdateFn) {
@@ -100,9 +101,17 @@ describe("GameClient.joinLobby", () => {
     const promise = client.joinLobby("card-game");
 
     // Emit a non-final update first
-    lobbyStream.emit("data", { sessionId: "sess-1", readyPlayers: [], gameStarting: false });
+    lobbyStream.emit("data", {
+      sessionId: "sess-1",
+      readyPlayers: [],
+      gameStarting: false,
+    });
     // Then the final one
-    lobbyStream.emit("data", { sessionId: "sess-42", readyPlayers: ["player-1"], gameStarting: true });
+    lobbyStream.emit("data", {
+      sessionId: "sess-42",
+      readyPlayers: ["player-1"],
+      gameStarting: true,
+    });
 
     await expect(promise).resolves.toBe("sess-42");
   });
@@ -150,8 +159,12 @@ describe("GameClient.run", () => {
     const runPromise = client.run();
 
     // Emit two normal updates then a terminal one
-    const update1 = makeStateUpdate({ state: { payload: Buffer.from("{}"), gameId: "g", stepIndex: 1 } });
-    const update2 = makeStateUpdate({ state: { payload: Buffer.from("{}"), gameId: "g", stepIndex: 2 } });
+    const update1 = makeStateUpdate({
+      state: { payload: Buffer.from("{}"), gameId: "g", stepIndex: 1 },
+    });
+    const update2 = makeStateUpdate({
+      state: { payload: Buffer.from("{}"), gameId: "g", stepIndex: 2 },
+    });
     const terminal = makeStateUpdate({ isTerminal: true });
 
     playStream.emit("data", update1);
@@ -169,11 +182,12 @@ describe("GameClient.run", () => {
     // Initial join action + two response actions written back (terminal action not sent)
     expect(playStream.written).toHaveLength(3);
     // Initial join action has actor id and empty payload
-    expect(playStream.written[0].actorId).toBe("player-1");
-    expect(playStream.written[0].payload).toEqual(Buffer.alloc(0));
+    const [join, act1, act2] = playStream.written;
+    expect(join?.actorId).toBe("player-1");
+    expect(join?.payload).toEqual(Buffer.alloc(0));
     // Actor id is stamped on subsequent actions too
-    expect(playStream.written[1].actorId).toBe("player-1");
-    expect(playStream.written[2].actorId).toBe("player-1");
+    expect(act1?.actorId).toBe("player-1");
+    expect(act2?.actorId).toBe("player-1");
   });
 
   it("calls onStateUpdate for the terminal update but does not send an action back", async () => {
@@ -192,7 +206,9 @@ describe("GameClient.run", () => {
     await runPromise;
     // onStateUpdate IS called for the terminal update
     expect(onStateUpdate).toHaveBeenCalledTimes(1);
-    expect(onStateUpdate).toHaveBeenCalledWith(makeStateUpdate({ isTerminal: true }));
+    expect(onStateUpdate).toHaveBeenCalledWith(
+      makeStateUpdate({ isTerminal: true }),
+    );
     // Only the initial join action is written — no action response for terminal
     expect(playStream.written).toHaveLength(1);
     expect(playStream.ended).toBe(true);

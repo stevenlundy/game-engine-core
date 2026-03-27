@@ -12,14 +12,14 @@
  */
 
 import { execFileSync } from "child_process";
-import { GameClient } from "../client.js";
 import { drawCard } from "../actions.js";
+import { GameClient } from "../client.js";
 import type { Action, StateUpdate } from "../proto/common.js";
 import {
+  type ServerInfo,
   startTestServer,
   stopTestServer,
   withTestServer,
-  type ServerInfo,
 } from "../testing/server.js";
 
 // ---------------------------------------------------------------------------
@@ -108,8 +108,8 @@ describeIntegration("Basic connection", () => {
     } finally {
       bot.close();
     }
-    const last = bot.updates[bot.updates.length - 1];
-    expect(last.isTerminal).toBe(true);
+    const last = bot.updates.at(-1);
+    expect(last?.isTerminal).toBe(true);
   });
 
   it("step count matches countdown", async () => {
@@ -142,9 +142,7 @@ describeIntegration("Basic connection", () => {
     } finally {
       bot.close();
     }
-    const postAction = bot.updates.filter(
-      (u) => (u.state?.stepIndex ?? 0) > 0
-    );
+    const postAction = bot.updates.filter((u) => (u.state?.stepIndex ?? 0) > 0);
     expect(postAction.length).toBeGreaterThan(0);
     for (const update of postAction) {
       expect(update.rewardDelta).toBeGreaterThan(0);
@@ -160,7 +158,9 @@ describeIntegration("Basic connection", () => {
     }
     const indices = bot.updates.map((u) => u.state?.stepIndex ?? 0);
     for (let i = 1; i < indices.length; i++) {
-      expect(indices[i]).toBeGreaterThan(indices[i - 1]);
+      const curr = indices[i] ?? 0;
+      const prev = indices[i - 1] ?? 0;
+      expect(curr).toBeGreaterThan(prev);
     }
   });
 });
@@ -204,43 +204,35 @@ describeIntegration("State payload", () => {
 // ---------------------------------------------------------------------------
 
 describeIntegration("Custom step count", () => {
-  it(
-    "3-step game produces exactly 3 non-terminal updates",
-    async () => {
-      let updates: StateUpdate[] = [];
-      await withTestServer({ countdownSteps: 3 }, async (info) => {
-        const bot = new RecordingBot(info.url, "p1");
-        try {
-          await bot.run();
-        } finally {
-          bot.close();
-        }
-        updates = bot.updates;
-      });
-      const nonTerminal = updates.filter((u) => !u.isTerminal);
-      expect(nonTerminal).toHaveLength(3);
-    },
-    60_000
-  );
+  it("3-step game produces exactly 3 non-terminal updates", async () => {
+    let updates: StateUpdate[] = [];
+    await withTestServer({ countdownSteps: 3 }, async (info) => {
+      const bot = new RecordingBot(info.url, "p1");
+      try {
+        await bot.run();
+      } finally {
+        bot.close();
+      }
+      updates = bot.updates;
+    });
+    const nonTerminal = updates.filter((u) => !u.isTerminal);
+    expect(nonTerminal).toHaveLength(3);
+  }, 60_000);
 
-  it(
-    "1-step game produces 1 non-terminal then a terminal",
-    async () => {
-      let updates: StateUpdate[] = [];
-      await withTestServer({ countdownSteps: 1 }, async (info) => {
-        const bot = new RecordingBot(info.url, "p1");
-        try {
-          await bot.run();
-        } finally {
-          bot.close();
-        }
-        updates = bot.updates;
-      });
-      expect(updates.length).toBeGreaterThanOrEqual(1);
-      expect(updates[updates.length - 1].isTerminal).toBe(true);
-    },
-    60_000
-  );
+  it("1-step game produces 1 non-terminal then a terminal", async () => {
+    let updates: StateUpdate[] = [];
+    await withTestServer({ countdownSteps: 1 }, async (info) => {
+      const bot = new RecordingBot(info.url, "p1");
+      try {
+        await bot.run();
+      } finally {
+        bot.close();
+      }
+      updates = bot.updates;
+    });
+    expect(updates.length).toBeGreaterThanOrEqual(1);
+    expect(updates.at(-1)?.isTerminal).toBe(true);
+  }, 60_000);
 });
 
 // ---------------------------------------------------------------------------

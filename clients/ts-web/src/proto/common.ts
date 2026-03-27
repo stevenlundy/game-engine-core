@@ -37,9 +37,7 @@ export interface Action {
 /** StateUpdate is sent from the server to a player after each transition. */
 export interface StateUpdate {
   /** state is the new game state after the action was applied. */
-  state:
-    | State
-    | undefined;
+  state: State | undefined;
   /** reward_delta is the immediate reward (or score change) for the actor. */
   rewardDelta: number;
   /** is_terminal flags whether this update ends the game. */
@@ -65,7 +63,10 @@ function createBaseJSON(): JSON {
 }
 
 export const JSON: MessageFns<JSON> = {
-  encode(message: JSON, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+  encode(
+    message: JSON,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
     if (message.data.length !== 0) {
       writer.uint32(10).bytes(message.data);
     }
@@ -73,7 +74,8 @@ export const JSON: MessageFns<JSON> = {
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): JSON {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseJSON();
     while (reader.pos < end) {
@@ -97,7 +99,11 @@ export const JSON: MessageFns<JSON> = {
   },
 
   fromJSON(object: any): JSON {
-    return { data: isSet(object.data) ? Buffer.from(bytesFromBase64(object.data)) : Buffer.alloc(0) };
+    return {
+      data: isSet(object.data)
+        ? Buffer.from(bytesFromBase64(object.data))
+        : Buffer.alloc(0),
+    };
   },
 
   toJSON(message: JSON): unknown {
@@ -123,7 +129,10 @@ function createBaseState(): State {
 }
 
 export const State: MessageFns<State> = {
-  encode(message: State, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+  encode(
+    message: State,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
     if (message.payload.length !== 0) {
       writer.uint32(10).bytes(message.payload);
     }
@@ -137,7 +146,8 @@ export const State: MessageFns<State> = {
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): State {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseState();
     while (reader.pos < end) {
@@ -178,17 +188,19 @@ export const State: MessageFns<State> = {
 
   fromJSON(object: any): State {
     return {
-      payload: isSet(object.payload) ? Buffer.from(bytesFromBase64(object.payload)) : Buffer.alloc(0),
+      payload: isSet(object.payload)
+        ? Buffer.from(bytesFromBase64(object.payload))
+        : Buffer.alloc(0),
       gameId: isSet(object.gameId)
         ? globalThis.String(object.gameId)
         : isSet(object.game_id)
-        ? globalThis.String(object.game_id)
-        : "",
+          ? globalThis.String(object.game_id)
+          : "",
       stepIndex: isSet(object.stepIndex)
         ? globalThis.Number(object.stepIndex)
         : isSet(object.step_index)
-        ? globalThis.Number(object.step_index)
-        : 0,
+          ? globalThis.Number(object.step_index)
+          : 0,
     };
   },
 
@@ -223,7 +235,10 @@ function createBaseAction(): Action {
 }
 
 export const Action: MessageFns<Action> = {
-  encode(message: Action, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+  encode(
+    message: Action,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
     if (message.actorId !== "") {
       writer.uint32(10).string(message.actorId);
     }
@@ -237,7 +252,8 @@ export const Action: MessageFns<Action> = {
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): Action {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseAction();
     while (reader.pos < end) {
@@ -281,14 +297,16 @@ export const Action: MessageFns<Action> = {
       actorId: isSet(object.actorId)
         ? globalThis.String(object.actorId)
         : isSet(object.actor_id)
-        ? globalThis.String(object.actor_id)
-        : "",
-      payload: isSet(object.payload) ? Buffer.from(bytesFromBase64(object.payload)) : Buffer.alloc(0),
+          ? globalThis.String(object.actor_id)
+          : "",
+      payload: isSet(object.payload)
+        ? Buffer.from(bytesFromBase64(object.payload))
+        : Buffer.alloc(0),
       timestampMs: isSet(object.timestampMs)
         ? globalThis.Number(object.timestampMs)
         : isSet(object.timestamp_ms)
-        ? globalThis.Number(object.timestamp_ms)
-        : 0,
+          ? globalThis.Number(object.timestamp_ms)
+          : 0,
     };
   },
 
@@ -323,7 +341,10 @@ function createBaseStateUpdate(): StateUpdate {
 }
 
 export const StateUpdate: MessageFns<StateUpdate> = {
-  encode(message: StateUpdate, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+  encode(
+    message: StateUpdate,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
     if (message.state !== undefined) {
       State.encode(message.state, writer.uint32(10).fork()).join();
     }
@@ -340,7 +361,8 @@ export const StateUpdate: MessageFns<StateUpdate> = {
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): StateUpdate {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseStateUpdate();
     while (reader.pos < end) {
@@ -393,18 +415,18 @@ export const StateUpdate: MessageFns<StateUpdate> = {
       rewardDelta: isSet(object.rewardDelta)
         ? globalThis.Number(object.rewardDelta)
         : isSet(object.reward_delta)
-        ? globalThis.Number(object.reward_delta)
-        : 0,
+          ? globalThis.Number(object.reward_delta)
+          : 0,
       isTerminal: isSet(object.isTerminal)
         ? globalThis.Boolean(object.isTerminal)
         : isSet(object.is_terminal)
-        ? globalThis.Boolean(object.is_terminal)
-        : false,
+          ? globalThis.Boolean(object.is_terminal)
+          : false,
       actorId: isSet(object.actorId)
         ? globalThis.String(object.actorId)
         : isSet(object.actor_id)
-        ? globalThis.String(object.actor_id)
-        : "",
+          ? globalThis.String(object.actor_id)
+          : "",
     };
   },
 
@@ -428,9 +450,14 @@ export const StateUpdate: MessageFns<StateUpdate> = {
   create<I extends Exact<DeepPartial<StateUpdate>, I>>(base?: I): StateUpdate {
     return StateUpdate.fromPartial(base ?? ({} as any));
   },
-  fromPartial<I extends Exact<DeepPartial<StateUpdate>, I>>(object: I): StateUpdate {
+  fromPartial<I extends Exact<DeepPartial<StateUpdate>, I>>(
+    object: I,
+  ): StateUpdate {
     const message = createBaseStateUpdate();
-    message.state = (object.state !== undefined && object.state !== null) ? State.fromPartial(object.state) : undefined;
+    message.state =
+      object.state !== undefined && object.state !== null
+        ? State.fromPartial(object.state)
+        : undefined;
     message.rewardDelta = object.rewardDelta ?? 0;
     message.isTerminal = object.isTerminal ?? false;
     message.actorId = object.actorId ?? "";
@@ -443,7 +470,10 @@ function createBaseSessionMetadata(): SessionMetadata {
 }
 
 export const SessionMetadata: MessageFns<SessionMetadata> = {
-  encode(message: SessionMetadata, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+  encode(
+    message: SessionMetadata,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
     if (message.sessionId !== "") {
       writer.uint32(10).string(message.sessionId);
     }
@@ -460,7 +490,8 @@ export const SessionMetadata: MessageFns<SessionMetadata> = {
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): SessionMetadata {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader =
+      input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseSessionMetadata();
     while (reader.pos < end) {
@@ -512,23 +543,23 @@ export const SessionMetadata: MessageFns<SessionMetadata> = {
       sessionId: isSet(object.sessionId)
         ? globalThis.String(object.sessionId)
         : isSet(object.session_id)
-        ? globalThis.String(object.session_id)
-        : "",
+          ? globalThis.String(object.session_id)
+          : "",
       rulesetVersion: isSet(object.rulesetVersion)
         ? globalThis.String(object.rulesetVersion)
         : isSet(object.ruleset_version)
-        ? globalThis.String(object.ruleset_version)
-        : "",
+          ? globalThis.String(object.ruleset_version)
+          : "",
       playerIds: globalThis.Array.isArray(object?.playerIds)
         ? object.playerIds.map((e: any) => globalThis.String(e))
         : globalThis.Array.isArray(object?.player_ids)
-        ? object.player_ids.map((e: any) => globalThis.String(e))
-        : [],
+          ? object.player_ids.map((e: any) => globalThis.String(e))
+          : [],
       startTimeUnix: isSet(object.startTimeUnix)
         ? globalThis.Number(object.startTimeUnix)
         : isSet(object.start_time_unix)
-        ? globalThis.Number(object.start_time_unix)
-        : 0,
+          ? globalThis.Number(object.start_time_unix)
+          : 0,
     };
   },
 
@@ -549,10 +580,14 @@ export const SessionMetadata: MessageFns<SessionMetadata> = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<SessionMetadata>, I>>(base?: I): SessionMetadata {
+  create<I extends Exact<DeepPartial<SessionMetadata>, I>>(
+    base?: I,
+  ): SessionMetadata {
     return SessionMetadata.fromPartial(base ?? ({} as any));
   },
-  fromPartial<I extends Exact<DeepPartial<SessionMetadata>, I>>(object: I): SessionMetadata {
+  fromPartial<I extends Exact<DeepPartial<SessionMetadata>, I>>(
+    object: I,
+  ): SessionMetadata {
     const message = createBaseSessionMetadata();
     message.sessionId = object.sessionId ?? "";
     message.rulesetVersion = object.rulesetVersion ?? "";
@@ -570,17 +605,31 @@ function base64FromBytes(arr: Uint8Array): string {
   return globalThis.Buffer.from(arr).toString("base64");
 }
 
-type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;
+type Builtin =
+  | Date
+  | Function
+  | Uint8Array
+  | string
+  | number
+  | boolean
+  | undefined;
 
-export type DeepPartial<T> = T extends Builtin ? T
-  : T extends globalThis.Array<infer U> ? globalThis.Array<DeepPartial<U>>
-  : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
-  : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
-  : Partial<T>;
+export type DeepPartial<T> = T extends Builtin
+  ? T
+  : T extends globalThis.Array<infer U>
+    ? globalThis.Array<DeepPartial<U>>
+    : T extends ReadonlyArray<infer U>
+      ? ReadonlyArray<DeepPartial<U>>
+      : T extends {}
+        ? { [K in keyof T]?: DeepPartial<T[K]> }
+        : Partial<T>;
 
 type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
+export type Exact<P, I extends P> = P extends Builtin
+  ? P
+  : P & { [K in keyof P]: Exact<P[K], I[K]> } & {
+      [K in Exclude<keyof I, KeysOfUnion<P>>]: never;
+    };
 
 function longToNumber(int64: { toString(): string }): number {
   const num = globalThis.Number(int64.toString());

@@ -1,7 +1,7 @@
 import * as grpc from "@grpc/grpc-js";
-import { MatchmakingClient } from "./proto/matchmaking";
+import type { Action, StateUpdate } from "./proto/common";
 import { GameSessionClient } from "./proto/gamesession";
-import { Action, StateUpdate } from "./proto/common";
+import { MatchmakingClient } from "./proto/matchmaking";
 
 export type { Action, StateUpdate };
 
@@ -60,9 +60,10 @@ export abstract class GameWebClient {
    */
   async joinLobby(gameType: string): Promise<string> {
     this.matchmakingClient = this.createMatchmakingClient();
+    const matchmakingClient = this.matchmakingClient;
 
     return new Promise<string>((resolve, reject) => {
-      const stream = this.matchmakingClient!.joinLobby({
+      const stream = matchmakingClient.joinLobby({
         playerId: this.playerId,
         gameType,
         config: Buffer.alloc(0),
@@ -93,9 +94,10 @@ export abstract class GameWebClient {
    */
   async run(): Promise<void> {
     this.gameSessionClient = this.createGameSessionClient();
+    const gameSessionClient = this.gameSessionClient;
 
     return new Promise<void>((resolve, reject) => {
-      const stream = this.gameSessionClient!.play();
+      const stream = gameSessionClient.play();
 
       const cleanup = () => {
         try {

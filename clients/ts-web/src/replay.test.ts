@@ -1,5 +1,5 @@
+import type { ReplayEntry } from "./proto/gamesession";
 import { ReplayPlayer } from "./replay";
-import { ReplayEntry } from "./proto/gamesession";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -17,9 +17,7 @@ function makeEntry(stepIndex: number, isTerminal = false): ReplayEntry {
 }
 
 function makeEntries(count: number): ReplayEntry[] {
-  return Array.from({ length: count }, (_, i) =>
-    makeEntry(i, i === count - 1)
-  );
+  return Array.from({ length: count }, (_, i) => makeEntry(i, i === count - 1));
 }
 
 // ---------------------------------------------------------------------------
@@ -48,12 +46,13 @@ describe("ReplayPlayer", () => {
     jest.advanceTimersByTime(300);
 
     expect(received).toHaveLength(3);
-    expect(received[0].index).toBe(0);
-    expect(received[1].index).toBe(1);
-    expect(received[2].index).toBe(2);
-    expect(received[0].entry.stepIndex).toBe(0);
-    expect(received[1].entry.stepIndex).toBe(1);
-    expect(received[2].entry.stepIndex).toBe(2);
+    const [r0, r1, r2] = received;
+    expect(r0?.index).toBe(0);
+    expect(r1?.index).toBe(1);
+    expect(r2?.index).toBe(2);
+    expect(r0?.entry.stepIndex).toBe(0);
+    expect(r1?.entry.stepIndex).toBe(1);
+    expect(r2?.entry.stepIndex).toBe(2);
   });
 
   it("stop() halts playback mid-stream", () => {
@@ -137,19 +136,21 @@ describe("ReplayPlayer", () => {
     jest.advanceTimersByTime(100);
 
     expect(received).toHaveLength(2);
-    expect(received[0].stepIndex).toBe(0);
-    expect(received[0].actorId).toBe("agent-1");
-    expect(received[0].rewardDelta).toBe(1.5);
-    expect(received[0].isTerminal).toBe(false);
+    const [e0, e1] = received;
+    expect(e0?.stepIndex).toBe(0);
+    expect(e0?.actorId).toBe("agent-1");
+    expect(e0?.rewardDelta).toBe(1.5);
+    expect(e0?.isTerminal).toBe(false);
 
-    expect(received[1].stepIndex).toBe(1);
-    expect(received[1].actorId).toBe("agent-2");
-    expect(received[1].rewardDelta).toBe(-0.5);
-    expect(received[1].isTerminal).toBe(true);
+    expect(e1?.stepIndex).toBe(1);
+    expect(e1?.actorId).toBe("agent-2");
+    expect(e1?.rewardDelta).toBe(-0.5);
+    expect(e1?.isTerminal).toBe(true);
   });
 
   it("fromJsonLines skips blank lines", () => {
-    const text = "\n\n" + JSON.stringify({ step_index: 0, actor_id: "x" }) + "\n\n";
+    const text =
+      "\n\n" + JSON.stringify({ step_index: 0, actor_id: "x" }) + "\n\n";
     const player = ReplayPlayer.fromJsonLines(text);
 
     jest.useFakeTimers();
@@ -159,6 +160,6 @@ describe("ReplayPlayer", () => {
     jest.advanceTimersByTime(50);
 
     expect(received).toHaveLength(1);
-    expect(received[0].stepIndex).toBe(0);
+    expect(received[0]?.stepIndex).toBe(0);
   });
 });

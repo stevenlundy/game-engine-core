@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# clients/ts-node/.githooks/pre-commit
+#
+# Runs fast local checks before every commit:
+#   1. Biome format check  — fail if any src/ files are not formatted
+#   2. Biome lint          — fail on lint errors
+#   3. tsc --noEmit        — fail on type errors
+#
+# Install once per clone (from the repo root):
+#   git config core.hooksPath clients/ts-node/.githooks
+#
+# Or run manually: bash clients/ts-node/.githooks/pre-commit
+
+set -euo pipefail
+
+cd "$(git rev-parse --show-toplevel)/clients/ts-node"
+
+echo "pre-commit: biome format check..."
+npx biome format src/ 2>&1 || { echo "❌ Format check failed — run 'make fmt'"; exit 1; }
+
+echo "pre-commit: biome lint..."
+npx biome lint src/ 2>&1 || { echo "❌ Lint failed — run 'make lint'"; exit 1; }
+
+echo "pre-commit: tsc --noEmit..."
+npx tsc --noEmit 2>&1 || { echo "❌ Type check failed — run 'make type-check'"; exit 1; }
+
+echo "✅ pre-commit checks passed"

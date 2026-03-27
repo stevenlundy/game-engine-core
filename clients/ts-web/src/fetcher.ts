@@ -14,7 +14,7 @@ export async function fetchGlog(url: string): Promise<ReplayPlayer> {
 
   if (!response.ok) {
     throw new Error(
-      `fetchGlog: request failed with status ${response.status} ${response.statusText}`
+      `fetchGlog: request failed with status ${response.status} ${response.statusText}`,
     );
   }
 

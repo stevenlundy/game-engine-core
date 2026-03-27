@@ -1,4 +1,4 @@
-import { Action } from "./proto/common.js";
+import type { Action } from "./proto/common.js";
 
 /**
  * Build a "play card" Action payload.
@@ -12,7 +12,12 @@ export function playCard(
   suit: string,
   declaredSuit?: string,
 ): Action {
-  const payload = JSON.stringify({ type: "play_card", rank, suit, ...(declaredSuit ? { declared_suit: declaredSuit } : {}) });
+  const payload = JSON.stringify({
+    type: "play_card",
+    rank,
+    suit,
+    ...(declaredSuit ? { declared_suit: declaredSuit } : {}),
+  });
   return {
     actorId: "",
     payload: Buffer.from(payload, "utf8"),
