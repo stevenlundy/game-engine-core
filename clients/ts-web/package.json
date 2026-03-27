@@ -1,6 +1,6 @@
 {
   "name": "game-engine-core-web",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Browser client SDK for game-engine-core \u2014 interactive GameWebClient + passive observer/replay",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
