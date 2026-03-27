@@ -7,16 +7,14 @@ on:
     branches: ["**"]
 
 jobs:
-  build-and-test:
-    name: Build & Test
+  # ── Go ────────────────────────────────────────────────────────────────────
+  go:
+    name: Go
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
+      - uses: actions/setup-go@v5
         with:
           go-version-file: ".go-version"
           cache: true
@@ -38,16 +36,127 @@ jobs:
         with:
           version: latest
 
-      # TODO(phase2): regenerate proto files and fail if diff is non-empty.
-      # Uncomment once protoc, protoc-gen-go, and protoc-gen-go-grpc are installed.
-      #
-      # - name: Regenerate proto files
-      #   run: make proto
-      #
-      # - name: Check proto diff
-      #   run: |
-      #     if ! git diff --quiet; then
-      #       echo "Proto generated files are out of sync. Run 'make proto' and commit."
-      #       git diff
-      #       exit 1
-      #     fi
+      - name: Install protoc
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y protobuf-compiler
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+          go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+
+      - name: Regenerate proto files
+        run: make proto
+
+      - name: Check proto diff
+        run: |
+          if ! git diff --quiet; then
+            echo "Proto generated files are out of sync. Run 'make proto' and commit."
+            git diff
+            exit 1
+          fi
+
+  # ── Python SDK ────────────────────────────────────────────────────────────
+  python:
+    name: Python SDK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: ".go-version"
+          cache: true
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          working-directory: clients/python
+
+      - name: Install deps
+        run: uv sync --extra dev
+        working-directory: clients/python
+
+      - name: Lint (ruff)
+        run: uv run ruff check .
+        working-directory: clients/python
+
+      - name: Format check (ruff)
+        run: uv run ruff format --check .
+        working-directory: clients/python
+
+      - name: Type check (mypy)
+        run: uv run mypy game_engine_core/ tests/
+        working-directory: clients/python
+
+      - name: Unit tests
+        run: uv run pytest tests/test_client.py -v
+        working-directory: clients/python
+
+      - name: Integration tests
+        run: uv run pytest tests/integration/ -v
+        working-directory: clients/python
+
+  # ── TypeScript Node SDK ───────────────────────────────────────────────────
+  ts-node:
+    name: TypeScript Node SDK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: ".go-version"
+          cache: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: "clients/ts-node/.nvmrc"
+          cache: "npm"
+          cache-dependency-path: "clients/ts-node/package-lock.json"
+
+      - name: Install deps
+        run: npm ci
+        working-directory: clients/ts-node
+
+      - name: Type check
+        run: npx tsc --noEmit
+        working-directory: clients/ts-node
+
+      - name: Lint + format check (Biome)
+        run: npx biome check src/
+        working-directory: clients/ts-node
+
+      - name: Unit tests
+        run: npm test
+        working-directory: clients/ts-node
+
+      - name: Integration tests
+        run: npm run test:integration
+        working-directory: clients/ts-node
+
+  # ── TypeScript Web SDK ────────────────────────────────────────────────────
+  ts-web:
+    name: TypeScript Web SDK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: "clients/ts-web/.nvmrc"
+          cache: "npm"
+          cache-dependency-path: "clients/ts-web/package-lock.json"
+
+      - name: Install deps
+        run: npm ci
+        working-directory: clients/ts-web
+
+      - name: Type check
+        run: npx tsc --noEmit
+        working-directory: clients/ts-web
+
+      - name: Lint + format check (Biome)
+        run: npx biome check src/
+        working-directory: clients/ts-web
+
+      - name: Tests
+        run: npm test
+        working-directory: clients/ts-web

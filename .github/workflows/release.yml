@@ -1,0 +1,248 @@
+name: Release
+
+# Triggered by pushing a version tag: git tag v0.2.0 && git push --tags
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+# Minimal permissions by default; jobs opt in to what they need.
+permissions:
+  contents: read
+
+jobs:
+  # ── 1. Gate: all tests must pass before any publish ──────────────────────
+  test:
+    name: Test (Go)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: ".go-version"
+          cache: true
+
+      - run: go mod download
+      - run: go vet ./...
+      - run: go test -race ./...
+
+      - uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+
+  test-python:
+    name: Test (Python SDK)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: ".go-version"
+          cache: true
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          working-directory: clients/python
+
+      - name: Install Python deps
+        run: uv sync --extra dev
+        working-directory: clients/python
+
+      - name: Run tests (unit + integration)
+        run: uv run pytest tests/ -v
+        working-directory: clients/python
+
+  test-ts-node:
+    name: Test (TypeScript Node SDK)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: ".go-version"
+          cache: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: "clients/ts-node/.nvmrc"
+          cache: "npm"
+          cache-dependency-path: "clients/ts-node/package-lock.json"
+
+      - name: Install deps
+        run: npm ci
+        working-directory: clients/ts-node
+
+      - name: Type check
+        run: npx tsc --noEmit
+        working-directory: clients/ts-node
+
+      - name: Lint
+        run: npx biome check src/
+        working-directory: clients/ts-node
+
+      - name: Unit tests
+        run: npm test
+        working-directory: clients/ts-node
+
+      - name: Integration tests
+        run: npm run test:integration
+        working-directory: clients/ts-node
+
+  test-ts-web:
+    name: Test (TypeScript Web SDK)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: "clients/ts-web/.nvmrc"
+          cache: "npm"
+          cache-dependency-path: "clients/ts-web/package-lock.json"
+
+      - name: Install deps
+        run: npm ci
+        working-directory: clients/ts-web
+
+      - name: Type check
+        run: npx tsc --noEmit
+        working-directory: clients/ts-web
+
+      - name: Lint
+        run: npx biome check src/
+        working-directory: clients/ts-web
+
+      - name: Tests
+        run: npm test
+        working-directory: clients/ts-web
+
+  # ── 2. Publish: Python SDK to PyPI ───────────────────────────────────────
+  publish-python:
+    name: Publish Python SDK to PyPI
+    needs: [test, test-python, test-ts-node, test-ts-web]
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/game-engine-core/
+    # Use PyPI Trusted Publisher (OIDC) — no token secret needed.
+    # Configure at https://pypi.org/manage/account/publishing/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          working-directory: clients/python
+
+      - name: Build distribution
+        run: uv build
+        working-directory: clients/python
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: clients/python/dist/
+
+  # ── 3. Publish: TypeScript Node SDK to npm ────────────────────────────────
+  publish-ts-node:
+    name: Publish TypeScript Node SDK to npm
+    needs: [test, test-python, test-ts-node, test-ts-web]
+    runs-on: ubuntu-latest
+    environment:
+      name: npm
+      url: https://www.npmjs.com/package/game-engine-core-node
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: "clients/ts-node/.nvmrc"
+          registry-url: "https://registry.npmjs.org"
+          cache: "npm"
+          cache-dependency-path: "clients/ts-node/package-lock.json"
+
+      - name: Install deps
+        run: npm ci
+        working-directory: clients/ts-node
+
+      - name: Build
+        run: npm run build
+        working-directory: clients/ts-node
+
+      - name: Publish
+        run: npm publish --access public
+        working-directory: clients/ts-node
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  # ── 4. Publish: TypeScript Web SDK to npm ────────────────────────────────
+  publish-ts-web:
+    name: Publish TypeScript Web SDK to npm
+    needs: [test, test-python, test-ts-node, test-ts-web]
+    runs-on: ubuntu-latest
+    environment:
+      name: npm
+      url: https://www.npmjs.com/package/game-engine-core-web
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: "clients/ts-web/.nvmrc"
+          registry-url: "https://registry.npmjs.org"
+          cache: "npm"
+          cache-dependency-path: "clients/ts-web/package-lock.json"
+
+      - name: Install deps
+        run: npm ci
+        working-directory: clients/ts-web
+
+      - name: Build
+        run: npm run build
+        working-directory: clients/ts-web
+
+      - name: Publish
+        run: npm publish --access public
+        working-directory: clients/ts-web
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  # ── 5. Create GitHub Release ──────────────────────────────────────────────
+  github-release:
+    name: Create GitHub Release
+    needs: [publish-python, publish-ts-node, publish-ts-web]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: ${{ steps.version.outputs.version }}
+          generate_release_notes: true
+          body: |
+            ## Packages
+
+            | Package | Registry | Install |
+            |---------|----------|---------|
+            | Go module | GitHub (automatic) | `go get github.com/stevenlundy/game-engine-core@${{ steps.version.outputs.version }}` |
+            | Python SDK | [PyPI](https://pypi.org/project/game-engine-core/) | `uv add game-engine-core==${{ steps.version.outputs.version }}` |
+            | TypeScript Node SDK | [npm](https://www.npmjs.com/package/game-engine-core-node) | `npm install game-engine-core-node@${{ steps.version.outputs.version }}` |
+            | TypeScript Web SDK | [npm](https://www.npmjs.com/package/game-engine-core-web) | `npm install game-engine-core-web@${{ steps.version.outputs.version }}` |

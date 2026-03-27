@@ -2,13 +2,65 @@
 
 The **Chassis** — a high-performance, language-agnostic foundation for game theory exploration and reinforcement learning. It provides a gRPC server, a standardised replay log (`.glog`), and reusable components (cards, grid, timing) so that any game can be plugged in by implementing a single Go interface.
 
+**GitHub:** https://github.com/stevenlundy/game-engine-core
+
+---
+
+## Using game-engine-core in a Game Repo
+
+Each released version publishes four packages simultaneously, so your game always uses a consistent set of server + client SDKs.
+
+### Go (server / game logic)
+
+```bash
+go get github.com/stevenlundy/game-engine-core@v0.1.0
+```
+
+```go
+import "github.com/stevenlundy/game-engine-core/pkg/engine"
+import "github.com/stevenlundy/game-engine-core/pkg/components/cards"
+```
+
+### Python (AI clients)
+
+```bash
+uv add game-engine-core==0.1.0
+# or: pip install game-engine-core==0.1.0
+```
+
+```python
+from game_engine_core import GameClient, Action
+```
+
+### TypeScript — Node.js (AI clients / bots)
+
+```bash
+npm install game-engine-core-node@0.1.0
+```
+
+```typescript
+import { GameClient, Action, StateUpdate } from "game-engine-core-node";
+```
+
+### TypeScript — Browser (web UI / interactive player)
+
+```bash
+npm install game-engine-core-web@0.1.0
+```
+
+```typescript
+import { GameWebClient, ReplayPlayer } from "game-engine-core-web";
+```
+
+> **Note:** The web client requires an Envoy proxy in front of the Go server for gRPC-Web transport. See [`clients/ts-web/README.md`](clients/ts-web/README.md).
+
 ---
 
 ## Quick Start
 
 ```bash
 # 1. Clone
-git clone https://github.com/game-engine/game-engine-core
+git clone https://github.com/stevenlundy/game-engine-core
 cd game-engine-core
 
 # 2. Regenerate protobuf (requires protoc + plugins — see below)
