@@ -2,24 +2,33 @@
 
 The Python client SDK for `game-engine-core`. Handles all gRPC plumbing so your AI only needs to implement one method: `on_state_update()`.
 
+**PyPI:** https://pypi.org/project/game-engine-core/
+**GitHub:** https://github.com/stevenlundy/game-engine-core
+
 ---
 
 ## Install
 
-### With `uv` (recommended)
-
 ```bash
-# From the game-engine-core repo root (editable install)
-uv add --editable ./clients/python
+# With uv (recommended)
+uv add game-engine-core
 
-# Or from git
-uv add git+https://github.com/game-engine/game-engine-core#subdirectory=clients/python
+# With pip
+pip install game-engine-core
 ```
 
-### With `pip`
+### Pinning to a specific version
 
 ```bash
-pip install ./clients/python
+uv add game-engine-core==0.1.0
+pip install game-engine-core==0.1.0
+```
+
+### Development (editable install from source)
+
+```bash
+# From the repo root
+uv add --editable ./clients/python
 ```
 
 ---

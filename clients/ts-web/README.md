@@ -2,12 +2,15 @@
 
 Browser client SDK for [game-engine-core](../../README.md).
 
+**npm:** https://www.npmjs.com/package/game-engine-core-web
+**GitHub:** https://github.com/stevenlundy/game-engine-core
+
 This package provides **two things**:
 
 1. **`GameWebClient`** — an interactive abstract base class for writing
-   browser-based AI agents that play live games against the engine (Phase 11).
+   browser-based AI agents that play live games against the engine.
 2. **`ReplayPlayer` + `fetchGlog`** — a passive observer SDK for replaying
-   finished game sessions in the browser (unchanged from earlier phases).
+   finished game sessions in the browser.
 
 ---
 
@@ -56,6 +59,12 @@ game-engine gRPC server runs).
 
 ```bash
 npm install game-engine-core-web
+```
+
+Pinning to a specific version:
+
+```bash
+npm install game-engine-core-web@0.1.0
 ```
 
 ### 2 — Subclass `GameWebClient`
@@ -150,15 +159,18 @@ console.log(rich.isTerminal);
 ## Development
 
 ```bash
-# Install deps
-npm install
-
-# Regenerate proto stubs (requires protoc in PATH)
-npm run proto
-
-# Run tests
-npm test
-
-# Type-check without emitting
-npx tsc --noEmit
+make install      # npm install
+make build        # tsc → dist/
+make test         # Jest tests
+make lint         # Biome lint
+make fmt          # Biome format
+make type-check   # tsc --noEmit
 ```
+
+### Regenerating protobuf stubs
+
+```bash
+npm run proto
+```
+
+Requires `protoc` in `PATH` and `ts-proto` (`npm install` handles ts-proto).

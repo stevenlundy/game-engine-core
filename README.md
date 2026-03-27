@@ -155,7 +155,7 @@ results, err := br.RunAll(context.Background(), configs)
 ## Parsing a `.glog` File
 
 ```go
-import "github.com/game-engine/game-engine-core/pkg/engine"
+import "github.com/stevenlundy/game-engine-core/pkg/engine"
 
 r, err := engine.OpenReplayLog("session-123.glog") // auto-detects GZIP
 if err != nil { log.Fatal(err) }
