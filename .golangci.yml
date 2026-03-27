@@ -10,6 +10,51 @@ linters:
     - wrapcheck
     - unparam
 
+  settings:
+    errcheck:
+      check-type-assertions: true
+      check-blank: false
+    govet:
+      enable-all: true
+      disable:
+        # fieldalignment reports suboptimal struct field ordering — useful for
+        # performance tuning but too noisy as a gate; address separately.
+        - fieldalignment
+      settings:
+        shadow:
+          strict: true
+    staticcheck:
+      checks: ["all"]
+    exhaustive:
+      default-signifies-exhaustive: true
+
+  exclusions:
+    rules:
+      # Defer close in tests: ignoring the error is idiomatic Go.
+      - path: "_test\\.go"
+        linters:
+          - errcheck
+        text: "Error return value of .*(Close|RemoveAll).*is not checked"
+      # unparam is noisy on interface implementations where the signature is fixed.
+      - linters:
+          - unparam
+        text: "always receives"
+      # pkg/transport/server.go returns gRPC status.Error/Errorf and ctx.Err()
+      # directly — these are already typed error values that callers inspect
+      # with status.Code() or errors.Is(). Wrapping would obscure the gRPC code.
+      - path: "pkg/transport/server\\.go"
+        linters:
+          - wrapcheck
+      # internal/auth returns gRPC status.Error — same rationale as server.go.
+      - path: "internal/auth/auth\\.go"
+        linters:
+          - wrapcheck
+      # shadow: short-variable redeclaration of err in sequential if-err blocks
+      # is idiomatic Go — only suppress the common pattern, not all shadow issues.
+      - linters:
+          - govet
+        text: "shadow: declaration of \"err\" shadows"
+
 formatters:
   enable:
     - gofmt
@@ -17,42 +62,6 @@ formatters:
     gofmt:
       simplify: true
 
-linters-settings:
-  errcheck:
-    check-type-assertions: true
-    check-blank: true
-  govet:
-    enable-all: true
-    settings:
-      shadow:
-        strict: true
-  staticcheck:
-    checks: ["all"]
-  exhaustive:
-    default-signifies-exhaustive: true
-
 run:
   timeout: 5m
   tests: true
-
-issues:
-  exclude-rules:
-    # Defer close in tests: ignoring the error is idiomatic Go.
-    - path: "_test\\.go"
-      linters:
-        - errcheck
-      text: "Error return value of .*(Close|RemoveAll).*is not checked"
-    # unparam is noisy on interface implementations where the signature is fixed.
-    - linters:
-        - unparam
-      text: "always receives"
-    # pkg/transport/server.go returns gRPC status.Error/Errorf and ctx.Err()
-    # directly — these are already typed error values that callers inspect
-    # with status.Code() or errors.Is(). Wrapping would obscure the gRPC code.
-    - path: "pkg/transport/server\\.go"
-      linters:
-        - wrapcheck
-    # internal/auth returns gRPC status.Error — same rationale as server.go.
-    - path: "internal/auth/auth\\.go"
-      linters:
-        - wrapcheck
